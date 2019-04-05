@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import cv2
 import numpy as np 
 import matplotlib.pyplot as plt
@@ -100,4 +101,6 @@ def Gaussian_filter(matrix, sigma=4, size=13):
         for j in range(padding, matrix.shape[0] - padding):
             result[i][j] = np.sum(matrix[i - padding : i + padding + 1, j - padding : j + padding + 1] * kernel)
     return result
+=======
+>>>>>>> b204122bb733da67fdf2c99393900f1466513db0
 
