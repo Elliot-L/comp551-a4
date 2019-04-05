@@ -1,0 +1,19 @@
+File to keep track of some issues in the original article and their workaround(s)
+
+Down-sampling
+1. Lack of code for downsampling & disagreement between one line in the code and the downsampling description in the "methods" section.
+  FIX: assume they downsampled properly and that the weird line was a typo/unclear detail, and we will downsample how it should've been done.
+2. Lack of clarity w.r.t. which samples they used (which replicates, which quality score)
+  FIX: assume they used the merge datasets (the ones with the highest quality score)
+3. Omission of how they reconstructed the matrices if they _actually_ downsampled at read-level (software/pipeline, parameters)
+  FIX: assume one of:
+    a) they reproduced Rao et al (2014)'s pipeline identically, or
+    b) they _didn't_ down-sample at read-level, but at _contact_ level (and did so properly; not a random 1/0 dropout or 1/downsample_ratio scaling, which is what the weird line hints to)
+    c) they down-sampled w/o replacement
+    and explain how our down-sampling scheme (option b)) accounts for the problem in a).
+    
+Blurring
+holy fucking shit this is actually dumb
+1. They chose not to use standard packages to blur their matrices with a gaussian kernel, and instead made their own kernel from scratch. 
+  1.1 problem because the coder straight up copy-pasted that code from a stackoverflow thread (100% identical at character level), and the author of that answer later acknowledged that his code was wrong and fixed it (but the code on the github for HiCPlus is still wrong!)
+  1.2 the blurring function doesn't even run as-is...
