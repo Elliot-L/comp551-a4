@@ -34,7 +34,7 @@ def create_matrix( path_to_downsampled_file, read_csv_params, output_type:str, o
     matrix_dims = 1 + max( downsampled_df[0].max(), downsampled_df[1].max() ) # the + 1 is to account for the 0-<res> bin
     hic_mat = np.zeros( ( matrix_dims, matrix_dims ) )
     print( hic_mat.shape )
-    # populating matrix (in a triangular way)
+    # populating matrix's upper triangular
     for row_tup in downsampled_df.itertuples():
         # row_tup: tuple of ( index, col1 value, col2 value, col3 value, col4 value, ... )
         
@@ -46,7 +46,7 @@ def create_matrix( path_to_downsampled_file, read_csv_params, output_type:str, o
     if enforce_symm:
         upper_triangular_sum = np.sum( np.triu( hic_mat, 1 ) )
         lower_triangular_sum = np.sum( np.tril( hic_mat, -1 ) )
-        # ensure the previous populating for-loop built a triangular matrix
+        # ensure the previous populating for-loop built an upper triangular matrix
         assert ( lower_triangular_sum == 0.0 ) or ( upper_triangular_sum == 0.0 )
         if upper_triangular_sum != lower_triangular_sum:
             hic_mat = triangularize_matrix( hic_mat )
