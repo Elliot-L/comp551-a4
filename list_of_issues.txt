@@ -13,7 +13,7 @@ Down-sampling
     and explain how our down-sampling scheme (option b)) accounts for the problem in a).
     
 Blurring
-holy fucking shit this is actually dumb
+holy fucking shit this is actually dumb  <- lol
 1. They chose not to use standard packages to blur their matrices with a gaussian kernel, and instead made their own kernel from scratch. 
   1.1 problem because the coder straight up copy-pasted that code from a stackoverflow thread (100% identical at character level), and the author of that answer later acknowledged that his code was wrong and fixed it (but the code on the github for HiCPlus is still wrong!)
   1.2 the blurring function doesn't even run as-is...
