@@ -5,6 +5,32 @@ import pandas as pds
 
 from scipy.sparse import csr_matrix
 
+def negate_triangular( triangular_arr:np.ndarray , triangular="lower", inplace=False ):
+
+    triangular = triangular.lower()
+    
+    try:
+        assert triangular in [ "lower", "upper" ]
+    except AssertionError as ae:
+        raise AssertionError( f"\n'triangular' must be 'lower' or 'upper'; you passed '{triangular}'\n" ) from ae 
+    
+    if triangular == "lower":
+        if inplace:
+            triangular_arr[ np.tril_indices( triangular_arr.shape[0] ) ] = -1
+            return triangular_arr
+        else:
+            cp = np.array( triangular_arr )
+            cp[ np.tril_indices( cp.shape[0] ) ] = -1
+            return cp
+    else: # triangular == "upper"
+        if inplace:
+            triangular_arr[ np.triu_indices( triangular_arr.shape[0] ) ] = -1
+            return triangular_arr
+        else:
+            cp = np.array( triangular_arr )
+            cp[ np.triu_indices( cp.shape[0] ) ] = -1
+            return cp
+
 def triangularize_matrix( ut_mat ):
     """
     Squarifies an upper triangular matrix/array.
