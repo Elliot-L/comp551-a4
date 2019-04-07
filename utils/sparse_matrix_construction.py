@@ -5,30 +5,45 @@ import pandas as pds
 
 from scipy.sparse import csr_matrix
 
-def negate_triangular( triangular_arr:np.ndarray , triangular="lower", inplace=False ):
+def negate_triangular( triangular_arr:np.ndarray , triangular_to_neg="lower", inplace=False ):
+    """
+    Overwrites the upper or lower triangular (excluding main diagonal) with -1.
 
-    triangular = triangular.lower()
-    
+    Arguments:
+
+        triangular_arr: input np.ndarray.
+
+        triangular_to_neg: str indicating whether to overwrite the lower/upper triangular portion or the input array (excludes main diagonal).
+
+        inplace: boolean, indicates whether to perform the overwrite inplace or not.
+
+    Returns:
+
+        The modified version of the array (if inplace=False).
+    """
+    # argument validation
+    triangular_to_neg = triangular_to_neg.lower()
     try:
-        assert triangular in [ "lower", "upper" ]
+        assert triangular_to_neg in [ "lower", "upper" ]
     except AssertionError as ae:
-        raise AssertionError( f"\n'triangular' must be 'lower' or 'upper'; you passed '{triangular}'\n" ) from ae 
+        raise AssertionError( f"\n'triangular' must be 'lower' or 'upper'; you passed '{triangular_to_neg}'\n" ) from ae 
     
-    if triangular == "lower":
+    if triangular_to_neg == "lower":
         if inplace:
-            triangular_arr[ np.tril_indices( triangular_arr.shape[0] ) ] = -1
+            triangular_arr[ np.tril_indices_from( triangular_arr, k=-1 ) ] = -1
             return triangular_arr
         else:
             cp = np.array( triangular_arr )
-            cp[ np.tril_indices( cp.shape[0] ) ] = -1
+            cp[ np.tril_indices_from( cp, k=-1 ) ] = -1
             return cp
-    else: # triangular == "upper"
+
+    else: # triangular_to_neg == "upper"
         if inplace:
-            triangular_arr[ np.triu_indices( triangular_arr.shape[0] ) ] = -1
+            triangular_arr[ np.triu_indices_from( triangular_arr, k=1 ) ] = -1
             return triangular_arr
         else:
             cp = np.array( triangular_arr )
-            cp[ np.triu_indices( cp.shape[0] ) ] = -1
+            cp[ np.triu_indices_from( cp, k=1 ) ] = -1
             return cp
 
 def triangularize_matrix( ut_mat ):
@@ -59,7 +74,7 @@ def create_matrix( path_to_downsampled_file, read_csv_params, output_type:str, o
     
     matrix_dims = 1 + max( downsampled_df[0].max(), downsampled_df[1].max() ) # the + 1 is to account for the 0-<res> bin
     hic_mat = np.zeros( ( matrix_dims, matrix_dims ) )
-    print( hic_mat.shape )
+
     # populating matrix's upper triangular
     for row_tup in downsampled_df.itertuples():
         # row_tup: tuple of ( index, col1 value, col2 value, col3 value, col4 value, ... )
@@ -97,7 +112,7 @@ def create_matrix( path_to_downsampled_file, read_csv_params, output_type:str, o
             with open( output_filename, 'wb' ) as pickle_handle:
                 pickle.dump( hic_mat, pickle_handle, protocol=pickle.HIGHEST_PROTOCOL )
         else:
-            np.savetxt( output_filename, hic_mat, delimiter='\t', fmt='%1.3f' ) # fix fmt argument
+            np.savetxt( output_filename, hic_mat, delimiter='\t', fmt='%1.3f' )
 
 
 if __name__ == '__main__':
