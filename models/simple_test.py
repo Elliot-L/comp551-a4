@@ -16,7 +16,7 @@ from torch.utils.data import DataLoader, TensorDataset
 # from tensorboardX import SummaryWriter
 # local files
 from models.cnn_models import *
-
+from models.srdensenet import Net as SRDenseNet
 
 def main(cli_args, device, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=True, verbose=True):
 
@@ -97,7 +97,7 @@ if __name__ == '__main__':
                         help='input batch size for training (default: 0, meaning entire dataset)')
     parser.add_argument('--test-batch-size', type=int, default=0, metavar='N',
                         help='input batch size for testing (default: 0, meaning entire dataset)')
-    parser.add_argument('--epochs', type=int, default=10, metavar='N',
+    parser.add_argument('--epochs', type=int, default=1000, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--lr', type=float, default=10E-03, metavar='LR',
                         help='learning rate (default: 10E-03)')
