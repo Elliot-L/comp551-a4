@@ -33,6 +33,7 @@ Specifications
    FIX: assume they didn't worry about that, so we won't either (it's debatable though).
 2. Is the 2Mb bandwidth used wrt the center of the window or the far left corner of the square window?
    FIX: assume it is wrt the center of the window
-
+3. Don't know if they calculated their correlations on a symmetric matrix or not.
+   FIX: assume they didn't (to avoid overcounting).
 
 
