@@ -42,7 +42,7 @@ def main(cli_args, device, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=Tru
         print("data has been loaded")
 
     # model = ThreeLayerModel.to(device)
-    model = ThreeLayerModel()
+    model = BaseNet()
 
     # parametize this
     optimizer = torch.optim.Adam(  # Adam
@@ -86,9 +86,6 @@ def main(cli_args, device, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=Tru
 
 
 if __name__ == '__main__':
-    # Training settings; I kept mostly the same names as those
-    # in mnist_example_cnn.py for ease of comparison, but added arguments
-    # and changed some default values.
 
     parser = argparse.ArgumentParser(description='Running Training Example')
 

@@ -32,3 +32,31 @@ class ThreeLayerModel(nn.Module):
         x = F.relu(self.fc1(x))  # [1, 128] -> [1, 32]
         x = self.fc2(x)  # [1, 32] -> [1, 1]
         return x
+
+
+class BaseNet(nn.Module):
+    # Taken from https://github.com/zhangyan32/HiCPlus_pytorch/blob/master/src/model.py (paper author)
+    # very slight modifications, same functionality
+    def __init__(self, D_in=None, D_out=None):  # changed args to default values (unused)
+        conv2d1_filters_numbers = 8
+        conv2d1_filters_size = 9
+        conv2d2_filters_numbers = 8
+        conv2d2_filters_size = 1
+        conv2d3_filters_numbers = 1  # seems 1 is directly passed in instead of using this
+        conv2d3_filters_size = 5
+        super(BaseNet, self).__init__()
+        # 1 input image channel, 6 output channels, 5x5 square convolution
+        # kernel
+        self.conv1 = nn.Conv2d(1, conv2d1_filters_numbers, conv2d1_filters_size)
+        self.conv2 = nn.Conv2d(conv2d1_filters_numbers, conv2d2_filters_numbers, conv2d2_filters_size)
+        self.conv3 = nn.Conv2d(conv2d2_filters_numbers, 1, conv2d3_filters_size)
+
+    def forward(self, x):
+        print("start forwardingf")
+        x = self.conv1(x)
+        x = F.relu(x)
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.conv3(x)
+        x = F.relu(x)
+        return x

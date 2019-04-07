@@ -17,3 +17,8 @@ holy fucking shit this is actually dumb
 1. They chose not to use standard packages to blur their matrices with a gaussian kernel, and instead made their own kernel from scratch. 
   1.1 problem because the coder straight up copy-pasted that code from a stackoverflow thread (100% identical at character level), and the author of that answer later acknowledged that his code was wrong and fixed it (but the code on the github for HiCPlus is still wrong!)
   1.2 the blurring function doesn't even run as-is...
+
+
+Model
+-Passes final output through ReLu, not necessarily wrong but weird as now optimizer doesn't see loss for negative outputs
+-Unclear what the arguments D_in and D_out should be used for, if anything
