@@ -28,10 +28,11 @@ Repetition:
 1. They never mention repeating their experiment with > 1 replicate (they don't have error bars on their charts either).
    FIX: do 5 diff random downsampling runs, treat each of the 5 downsampled datasets as replicates, hopefully be able to run everything on all 5 replicates and get stats on those (could do more if we have time).
    
-Domain-specific:
+Specifications
 1. How do they treat the symmetric matrices (esp. near the main diag)?
    FIX: assume they didn't worry about that, so we won't either (it's debatable though).
-   
+2. Is the 2Mb bandwidth used wrt the center of the window or the far left corner of the square window?
+   FIX: assume it is wrt the center of the window
 
 
 
