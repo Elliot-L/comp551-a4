@@ -17,3 +17,21 @@ holy fucking shit this is actually dumb
 1. They chose not to use standard packages to blur their matrices with a gaussian kernel, and instead made their own kernel from scratch. 
   1.1 problem because the coder straight up copy-pasted that code from a stackoverflow thread (100% identical at character level), and the author of that answer later acknowledged that his code was wrong and fixed it (but the code on the github for HiCPlus is still wrong!)
   1.2 the blurring function doesn't even run as-is...
+
+Training, testing, validating
+1. At one point, they say they used chr1-17 as training and 18-22 as testing. But in another section, they say they used 1-7 as training and 13 as validation? 
+   FIX: 
+2. Chr 21, 22 have unmapped p-arms, so they aren't representative of most chromosomes (overinflated correlation stats)
+   FIX: don't use BOTH 21 and 22 in the same test/train/val split
+
+Repetition:
+1. They never mention repeating their experiment with > 1 replicate (they don't have error bars on their charts either).
+   FIX: do 5 diff random downsampling runs, treat each of the 5 downsampled datasets as replicates, hopefully be able to run everything on all 5 replicates and get stats on those (could do more if we have time).
+   
+Domain-specific:
+1. How do they treat the symmetric matrices (esp. near the main diag)?
+   FIX: assume they didn't worry about that, so we won't either (it's debatable though).
+   
+
+
+
