@@ -6,30 +6,27 @@ Modified from cnn_trial file from assignment 3
 
 from __future__ import print_function
 
+import numpy as np
 import argparse, random, torch, torchvision
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import os
 from torchvision import transforms
 from torch.utils.data import DataLoader, TensorDataset
-from tensorboardX import SummaryWriter
+# from tensorboardX import SummaryWriter
 # local files
-# from data_loader import load_training_data, load_training_labels
-# from some_model_classes import *
 from models.cnn_models import *
-
-def accuracy(output_layer: torch.tensor, yb: torch.tensor):
-    ml_preds = torch.argmax(output_layer, dim=1)
-    return (ml_preds == yb.long()).float().mean()
 
 
 def main(cli_args, device, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=True, verbose=True):
-    # training_data = load_training_data(cli_args.training_dataset_path, as_tensor=True)
-    # training_labels = load_training_labels(cli_args.training_labels_path, as_tensor=True)
 
-    
-
-    tensor_dataset = TensorDataset(training_data, training_labels.long())
+    # generating some mock data
+    training_data = np.array(np.random.randint(low=0, high=10, size=(1, 1, 13, 13)), dtype=np.float32)
+    training_labels = np.array(np.random.randint(low=0, high=10, size=(1, 1)), dtype=np.float32)
+    # convert from np to tensors
+    training_data = torch.tensor(training_data)
+    training_labels = torch.tensor(training_labels)
+    tensor_dataset = TensorDataset(training_data, training_labels)
 
     batch_size = cli_args.batch_size
     if batch_size == 0:
@@ -44,7 +41,8 @@ def main(cli_args, device, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=Tru
     if verbose:
         print("data has been loaded")
 
-    model = ThreeLayerModel.to(device)
+    # model = ThreeLayerModel.to(device)
+    model = ThreeLayerModel()
 
     # parametize this
     optimizer = torch.optim.Adam(  # Adam
@@ -68,20 +66,14 @@ def main(cli_args, device, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=Tru
         model.train()
         for batchidx, (data_instance, data_label) in enumerate(tensor_dl):
 
-            # unsqueeze(0) adds a dimension in the leftmost position to deal with the Channels argument of the Conv2d layers
-            unsqzd_di = data_instance.unsqueeze(0)
-
             # forward pass
-            preds = model(unsqzd_di)
+            preds = model(data_instance)
 
             # compute loss and accuracy
-            loss = criterion(preds, data_label)  # the .long typecast is a bandaid fix, idfk wtf is happening
+            loss = criterion(preds, data_label)
             losses.append(loss)
 
-            # Compute accuracy
-            _, argmax = torch.max(preds, 1)
-            accuracy = (data_label == argmax.squeeze()).float().mean()
-            accuracies.append(accuracy)
+            accuracies.append(torch.sqrt(loss))  # accuracy is basically same as loss for MSE
 
             # reset gradients to zero, then do a backward prop and update the weights
             optimizer.zero_grad()  # zeros out any gradient buffers from previous iterations
@@ -104,7 +96,7 @@ if __name__ == '__main__':
                         help="path to the training dataset pickle file (default: train_images.pkl)")
     parser.add_argument('--training-labels-path', type=str, default="train_labels.csv",
                         help="path to the training labels csv file (default: train_labels.csv)")
-    parser.add_argument('--batch-size', type=int, default=1, metavar='N',
+    parser.add_argument('--batch-size', type=int, default=0, metavar='N',
                         help='input batch size for training (default: 0, meaning entire dataset)')
     parser.add_argument('--test-batch-size', type=int, default=0, metavar='N',
                         help='input batch size for testing (default: 0, meaning entire dataset)')

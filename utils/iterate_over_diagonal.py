@@ -27,8 +27,25 @@ def kth_diag_indices( a:np.ndarray, k:int ):
     else:
         return rows, cols
 
-def iterate_over_diagonals( arr, bandwidth, window_dim ):
+def iterate_over_diagonals( arr:np.ndarray, bandwidth:int, window_dim:int ):
+    """
+    Returns a list of (window_array centered at some point x,y on a diagonal (a np.ndarray), diagonal offset from main diagonal (an int)) tuples.
 
+    Arguments:
+
+        arr: original np.ndarray to iterate over.
+
+        bandwidth: int representing how many diagonals to iterate over.
+
+        window_dim: odd integer representing the size of the window arrays.
+    
+    Returns:
+
+        centerpoints: list of tuples of two elements:
+                        first element: a window_dim x window_dim subarray centered at some point along some diagonal.
+                        second element: the indices of the centerpoint of first element.
+
+    """
     window_pad = ( window_dim - 1 ) // 2
     centerpoints = {}
     for diag_offset in range( bandwidth ):
