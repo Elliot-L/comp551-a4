@@ -42,7 +42,7 @@ def main(cli_args, device, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=Tru
         print("data has been loaded")
 
     # model = ThreeLayerModel.to(device)
-    model = BaseNet()
+    model = ThreeLayerModel()
 
     # parametize this
     optimizer = torch.optim.Adam(  # Adam
