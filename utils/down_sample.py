@@ -2,13 +2,14 @@ import pandas as pd
 import random, os
 from tqdm import tqdm 
 
-def downsample_matrix(csv_path, read_csv_params, output_file_path, ratio=16, seed=7, verbose=False):
+def downsample_matrix(csv_path, read_csv_params, output_file_path, ratio=16, seed=7, verbose=True):
     """
     :param csv_path: path to the input file
     :param read_csv_params: arguments for the pd read_csv function
     :param ratio: downsampling ratio
     :param output_file_path: name of the output file, will have the see appended for reproducibility
     :param seed: random seed for random choice
+    :verbose: bool indicator of verbosity
     :return: No return, saves tsv file with downsampled matrix
     """
     df = pd.read_csv(csv_path, **read_csv_params)
