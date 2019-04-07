@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import cv2
 import numpy as np 
 import matplotlib.pyplot as plt
@@ -73,12 +72,12 @@ def gaussian_blur( in_array, gaussian_blur_function, gaussian_blur_parameters, v
 
     # skimage.filters.gaussian is a wrapper around scipy.ndimage.filters.gaussian_filter
     if ( gaussian_blur_function == "scipy" ) or ( gaussian_blur_function == "skimage" ): 
-        if return_type == scipy.sparse.csr.csr_matrix:
+        if return_type == .csr_matrix:
             return csr_matrix( gaussian_filter( in_array.toarray().astype( float ), *gaussian_blur_parameters ) ) 
         else:
             return gaussian_filter( in_array.toarray().astype( float ), *gaussian_blur_parameters )
     else:
-        if return_type == scipy.sparse.csr.csr_matrix:
+        if return_type == csr_matrix:
             return csr_matrix( cv2.GaussianBlur( in_array.toarray().astype( float ), *gaussian_blur_parameters ) )
         else:
             return cv2.GaussianBlur( in_array.toarray().astype( float ), *gaussian_blur_parameters )
@@ -101,6 +100,4 @@ def Gaussian_filter(matrix, sigma=4, size=13):
         for j in range(padding, matrix.shape[0] - padding):
             result[i][j] = np.sum(matrix[i - padding : i + padding + 1, j - padding : j + padding + 1] * kernel)
     return result
-=======
->>>>>>> b204122bb733da67fdf2c99393900f1466513db0
 
