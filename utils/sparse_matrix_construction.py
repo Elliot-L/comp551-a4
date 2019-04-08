@@ -46,11 +46,11 @@ def negate_triangular( triangular_arr:np.ndarray , triangular_to_neg="lower", in
             cp[ np.triu_indices_from( cp, k=1 ) ] = -1
             return cp
 
-def triangularize_matrix( ut_mat ):
+def make_matrix_symmetric( ut_mat ):
     """
     Squarifies an upper triangular matrix/array.
     """
-    return np.triu( ut_mat ) + np.triu( ut_mat, 1 ).T
+    return np.triu( ut_mat ) + np.triu( ut_mat, k=1 ).T
 
 def create_matrix( path_to_downsampled_file, read_csv_params, output_type:str, output_file_path=None, resolution=10000, as_pickle=False, enforce_symm=False ):
     """
@@ -111,7 +111,7 @@ def create_matrix( path_to_downsampled_file, read_csv_params, output_type:str, o
         # ensure the previous populating for-loop built an upper triangular matrix
         assert ( lower_triangular_sum == 0.0 ) or ( upper_triangular_sum == 0.0 )
         if upper_triangular_sum != lower_triangular_sum:
-            hic_mat = triangularize_matrix( hic_mat )
+            hic_mat = make_matrix_symmetric( hic_mat )
 
     # saving output
     if output_type == "pandas":
