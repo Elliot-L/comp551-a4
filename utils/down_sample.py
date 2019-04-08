@@ -1,6 +1,6 @@
+import random, os, gzip, io, argparse
 import pandas as pd
 import numpy as np
-import random, os, gzip, io
 from tqdm import tqdm 
 
 def downsample_matrix(csv_path, read_csv_params, output_file_path, ratio=16, seed=7, verbose=True):
@@ -72,7 +72,7 @@ def downsample_matrix(csv_path, read_csv_params, output_file_path, ratio=16, see
     del df
     del counts
 
-def downsample_all_matrices( dirpath, num_downsamples=1 ):
+def downsample_all_matrices( dirpath, seeds_list=1 ):
     """
     Wrapper around downsample_matrix to iterate over all the raw files in a folder.
 
@@ -80,7 +80,7 @@ def downsample_all_matrices( dirpath, num_downsamples=1 ):
 
         dirpath: path to the directory containing the raw .gz files (and no other files).
 
-        num_downsamples: int indicating how many _separate_ downsample runs to make.
+        seeds_list: list of ints representing random seeds.
 
     Returns:
 
@@ -90,9 +90,9 @@ def downsample_all_matrices( dirpath, num_downsamples=1 ):
 
     # argument validation
     assert os.path.isdir( dirpath )
-    all_files = reversed( [ os.path.join( dirpath, f ) for f in os.listdir( dirpath ) if os.path.isfile( os.path.join( dirpath, f ) ) and ( "chr1_" in f ) ] )
+    all_files = list( reversed( [ os.path.join( dirpath, f ) for f in os.listdir( dirpath ) if os.path.isfile( os.path.join( dirpath, f ) ) ] ) )
     
-    for rand_seed in range( 1, 1+num_downsamples ):
+    for rand_seed in seeds_list:
         downsample_dir_name = os.path.join( dirpath, f"downsampled_with_seed_{rand_seed}" )
         os.makedirs( downsample_dir_name )
         for raw_file in all_files:
@@ -114,20 +114,32 @@ def downsample_all_matrices( dirpath, num_downsamples=1 ):
             )
 
 if __name__ == '__main__':
-    '''
-    downsample_matrix(
-        "test_file_for_matrix_construction.tsv",
-        {
-            'sep':'\t',
-            'header':None,
-            'index_col':None
-        },
-        'downsample'
-    )
-    '''
+
+    parser = argparse.ArgumentParser( description='Downsampling Hi-C Dataset' )
+    parser.add_argument('--raw-data-dir', type=str, metavar='P', required=True,
+                        help='path to the directory containing the raw data files.')
+    parser.add_argument('--random-seeds', type=int, nargs='+', metavar='S', required=True,
+                        help='space-separated integers representing seeds for random downsampling')
+    args = parser.parse_args()
     downsample_all_matrices(
-        r"C:\Users\Samy\Dropbox\Samy_Dropbox\MSc\winter-2019-courses\COMP-551\comp551-a4\data\raw",
-        num_downsamples=2
-    )
-    
-    
+        args.raw_data_dir,
+        seeds_list=args.random_seeds
+    )    
+
+    # testing code for individual functions
+    # to test downsample_matrix:
+    #downsample_matrix(
+    #    "test_file_for_matrix_construction.tsv",
+    #    {
+    #        'sep':'\t',
+    #        'header':None,
+    #        'index_col':None
+    #    },
+    #    'downsample'
+    #)
+    #################################
+    # to test downsample_all_matrices:
+    #downsample_all_matrices(
+    #    r"C:\Users\Samy\Dropbox\Samy_Dropbox\MSc\winter-2019-courses\COMP-551\comp551-a4\data\raw",
+    #    seeds_list=[1234,99999]
+    #)
