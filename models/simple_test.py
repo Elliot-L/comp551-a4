@@ -20,17 +20,21 @@ from models.srdensenet import Net as SRDenseNet
 
 def main(cli_args, device, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=True, verbose=True):
 
+    batch_size = cli_args.batch_size
+
     # generating some mock data
-    training_data = np.array(np.random.randint(low=0, high=10, size=(1, 1, 13, 13)), dtype=np.float32)
-    training_labels = np.array(np.random.randint(low=0, high=10, size=(1, 1)), dtype=np.float32)
+    size = cli_args.mock_data_size
+    training_data = np.array(np.random.randint(low=0, high=10, size=(batch_size, 1, size, size)), dtype=np.float32)
+    assert size == 40 or size == 13, 'currently unsupported data size'
+    if size == 40:
+        training_labels = np.array(np.random.randint(low=0, high=10, size=(batch_size, 1, 28, 28)), dtype=np.float32)
+    else:
+        training_labels = np.array(np.random.randint(low=0, high=10, size=(batch_size, 1,)), dtype=np.float32)
+
     # convert from np to tensors
     training_data = torch.tensor(training_data)
     training_labels = torch.tensor(training_labels)
     tensor_dataset = TensorDataset(training_data, training_labels)
-
-    batch_size = cli_args.batch_size
-    if batch_size == 0:
-        batch_size = training_data.shape[0]
 
     tensor_dl = DataLoader(
         tensor_dataset,
@@ -42,7 +46,7 @@ def main(cli_args, device, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=Tru
         print("data has been loaded")
 
     # model = ThreeLayerModel.to(device)
-    model = ThreeLayerModel()
+    model = ThreeLayerModel40(batch_size)
 
     # parametize this
     optimizer = torch.optim.Adam(  # Adam
@@ -91,13 +95,15 @@ if __name__ == '__main__':
 
     parser.add_argument('--training-dataset-path', type=str, default="train_images.pkl",
                         help="path to the training dataset pickle file (default: train_images.pkl)")
+    parser.add_argument('--mock-data-size', type=int, default=40,
+                        help="shape for the mock data (will be made square)")
     parser.add_argument('--training-labels-path', type=str, default="train_labels.csv",
                         help="path to the training labels csv file (default: train_labels.csv)")
-    parser.add_argument('--batch-size', type=int, default=0, metavar='N',
+    parser.add_argument('--batch-size', type=int, default=1, metavar='N',
                         help='input batch size for training (default: 0, meaning entire dataset)')
     parser.add_argument('--test-batch-size', type=int, default=0, metavar='N',
                         help='input batch size for testing (default: 0, meaning entire dataset)')
-    parser.add_argument('--epochs', type=int, default=1000, metavar='N',
+    parser.add_argument('--epochs', type=int, default=10, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--lr', type=float, default=10E-03, metavar='LR',
                         help='learning rate (default: 10E-03)')
