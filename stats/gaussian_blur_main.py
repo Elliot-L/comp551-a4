@@ -14,6 +14,7 @@ from skimage.filters import gaussian
 def my_make_gaussian_kernel( dim, mu: list, cov_mat: np.ndarray, xrange=(-5,5), showplot=False ):
     """
     Function used to define some multivariate gaussian kernels (and plot them).
+    Ref: https://stackoverflow.com/questions/48465683/visualizing-a-multivariate-normal-distribution-with-numpy-and-matplotlib-in-3-di/48466089
     """
     x = y = np.linspace( *xrange, dim ) 
     X, Y = np.meshgrid( x, y )
@@ -27,7 +28,7 @@ def my_make_gaussian_kernel( dim, mu: list, cov_mat: np.ndarray, xrange=(-5,5), 
         fig.show()
     return Z
 
-def gaussian_blur( in_array, gaussian_blur_function, gaussian_blur_parameters, verbose=False ):
+def gaussian_blur( in_array, gaussian_blur_function, gaussian_blur_parameters={}, verbose=False ):
     """
     Main function to perform a gaussian blur.
 
@@ -72,15 +73,15 @@ def gaussian_blur( in_array, gaussian_blur_function, gaussian_blur_parameters, v
 
     # skimage.filters.gaussian is a wrapper around scipy.ndimage.filters.gaussian_filter
     if ( gaussian_blur_function == "scipy" ) or ( gaussian_blur_function == "skimage" ): 
-        if return_type == .csr_matrix:
-            return csr_matrix( gaussian_filter( in_array.toarray().astype( float ), *gaussian_blur_parameters ) ) 
+        if return_type == csr_matrix:
+            return csr_matrix( gaussian_filter( in_array.toarray().astype( float ), **gaussian_blur_parameters ) ) 
         else:
-            return gaussian_filter( in_array.toarray().astype( float ), *gaussian_blur_parameters )
+            return gaussian_filter( in_array.toarray().astype( float ), **gaussian_blur_parameters )
     else:
         if return_type == csr_matrix:
-            return csr_matrix( cv2.GaussianBlur( in_array.toarray().astype( float ), *gaussian_blur_parameters ) )
+            return csr_matrix( cv2.GaussianBlur( in_array.toarray().astype( float ), **gaussian_blur_parameters ) )
         else:
-            return cv2.GaussianBlur( in_array.toarray().astype( float ), *gaussian_blur_parameters )
+            return cv2.GaussianBlur( in_array.toarray().astype( float ), **gaussian_blur_parameters )
 
 # copied from https://github.com/zhangyan32/HiCPlus/blob/master/src/Gaussian_kernel_smoothing.py
 def gkern(kernlen, nsig): # holy fucking shit, he literally copied the *_wrong_* original answer from https://stackoverflow.com/questions/29731726/how-to-calculate-a-gaussian-kernel-matrix-efficiently-in-numpy
