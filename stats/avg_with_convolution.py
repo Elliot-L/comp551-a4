@@ -1,7 +1,7 @@
 import numpy as np 
 from scipy.ndimage import convolve 
 
-def make_window_avgd_matrix( arr:np.ndarray, window_size:int, convolve_args, ret_type=None ):
+def make_window_avgd_matrix( arr:np.ndarray, window_size:int, convolve_args={'mode':'nearest'}, ret_type=None ):
     """
     Wrapper around vectorized window-average function (see scipy.ndimage.convolve).
 
@@ -28,3 +28,5 @@ def make_window_avgd_matrix( arr:np.ndarray, window_size:int, convolve_args, ret
 
     if ret_type is not None:
         return avgd_arr.astype( ret_type )
+    else:
+        return avgd_arr
