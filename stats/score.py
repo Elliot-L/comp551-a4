@@ -37,9 +37,9 @@ def score_correlation( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", met
     if triangular == "already flattened":
         
         if metric == "pearson":
-            return pearsonr( flat_arr1, flat_arr2 )
+            return pearsonr( arr1, arr2 )
         else: # metric == "spearman"
-            return spearmanr( flat_arr1, flat_arr2 )
+            return spearmanr( arr1, arr2 )
 
     elif triangular == "upper":
         inds = np.triu_indices( arr1.shape[0] )
