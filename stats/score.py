@@ -2,7 +2,6 @@ import numpy as np
 
 from scipy.stats import pearsonr, spearmanr 
 
-
 def score_correlation( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", metric="pearson" ):
     """
     Wrapper around scipy.stats.pearsonr and scipy.stats.spearmanr to quantify the correlation between two matrices' values.
@@ -24,9 +23,9 @@ def score_correlation( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", met
     # argument validation 
     triangular = triangular.lower()
     try:
-        assert triangular in [ "upper", "lower" ]
+        assert triangular in [ "upper", "lower", "already flattened" ]
     except AssertionError as ae:
-        raise AssertionError( f"\ntriangular can be one of 'upper' or 'lower'; you passed: '{triangular}'\n") from ae
+        raise AssertionError( f"\ntriangular can be one of 'upper', 'lower', or 'already flattened'; you passed: '{triangular}'\n") from ae
     
     metric = metric.lower()
     try:
@@ -35,7 +34,14 @@ def score_correlation( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", met
         raise AssertionError( f"\nmetric can be one of 'pearson' or 'spearman'; you passed: '{metric}'\n") from ae
 
     inds = None
-    if triangular == "upper":
+    if triangular == "already flattened":
+        
+        if metric == "pearson":
+            return pearsonr( flat_arr1, flat_arr2 )
+        else: # metric == "spearman"
+            return spearmanr( flat_arr1, flat_arr2 )
+
+    elif triangular == "upper":
         inds = np.triu_indices( arr1.shape[0] )
         
     else: # triangular == "lower"
