@@ -1,5 +1,6 @@
 import pandas as pd
-import random, os
+import numpy as np
+import random, os, gzip, io
 from tqdm import tqdm 
 
 def downsample_matrix(csv_path, read_csv_params, output_file_path, ratio=16, seed=7, verbose=True):
@@ -19,25 +20,57 @@ def downsample_matrix(csv_path, read_csv_params, output_file_path, ratio=16, see
     pop = list()
     for key, val in tqdm( counts.items() ):
         pop.extend([key] * int(val))
+    if verbose:
+        print( "expanded contents has been made into a list, starting downsampling" )
+    
     random.seed(seed)
     # there's probably a more efficient way to do this
     downsampled_pop = random.sample(pop, int(len(pop) / ratio))
     downsampled_counts = dict()
     for tup in tqdm( downsampled_pop ):
+        try:
+            downsampled_counts[tup] += 1
+        except KeyError:
+            downsampled_counts[tup] = 1
+        '''
+        the try/except block above is a faster way to do this / maybe, it fluctuates quite a bit on my laptop
         if tup not in downsampled_counts.keys():
             downsampled_counts[tup] = 1
         else:
             downsampled_counts[tup] += 1
+        '''
     if verbose:
-        print( "done downsampling" )
-    # making a pandas dataframe
-    result_df = pd.DataFrame( [ [ key[0], key[1], val ] for key, val in downsampled_counts.items() ] )
-    if verbose:
-        print( "made downsampled dataframe" )
-    name = output_file_path + '_' + str(seed) + '.gz'
-    result_df.to_csv(name, sep='\t', header=False, index=False, compression='gzip')
-
+        print( f"done downsampling, dictionary has {len( downsampled_pop )} entries" )
+    
+    # if-block circumvents the slowness of pandas with large dataframes
+    # chr1, chr2, and chr3 are the files that (empirically) gave pandas the hardest time
+    if ( "chr1_" in output_file_path ) or ( "chr2_" in output_file_path ) or ( "chr3_" in output_file_path ):
+        name = output_file_path + '_' + str(seed) + '.tsv.gz'
+        # convert to \n-delimited stream 
+        print( "making stream version of output data" )
+        contents = '\n'.join( [ f"{key[0]}\t{key[1]}\t{val}" for key, val in downsampled_counts.items() ] )
+        print( "saving stream to output file (may take ~5-7 minutes)" )
+        with gzip.open( name, 'wb' ) as outfile:
+            with io.TextIOWrapper( outfile, encoding='utf-8' ) as encoded:
+                encoded.write( contents )
+        del contents
+    else:
+        # making a pandas dataframe
+        arr = np.array( [ [ key[0], key[1], val ] for key, val in downsampled_counts.items() ], dtype='uint32' )
+        if verbose:
+            print( "made downsampled array" )
+        result_df = pd.DataFrame( arr )
+        if verbose:
+            print( "made downsampled dataframe" )
+        name = output_file_path + '_' + str(seed) + 'tsv.gz'
+        result_df.to_csv(name, sep='\t', header=False, index=False, compression='gzip')
+        del result_df 
+        del arr
     print('done')
+    del pop 
+    del downsampled_pop
+    del df
+    del counts
 
 def downsample_all_matrices( dirpath, num_downsamples=1 ):
     """
@@ -57,7 +90,7 @@ def downsample_all_matrices( dirpath, num_downsamples=1 ):
 
     # argument validation
     assert os.path.isdir( dirpath )
-    all_files = [ os.path.join( dirpath, f ) for f in os.listdir( dirpath ) ]
+    all_files = reversed( [ os.path.join( dirpath, f ) for f in os.listdir( dirpath ) if os.path.isfile( os.path.join( dirpath, f ) ) and ( "chr1_" in f ) ] )
     
     for rand_seed in range( 1, 1+num_downsamples ):
         downsample_dir_name = os.path.join( dirpath, f"downsampled_with_seed_{rand_seed}" )
@@ -70,7 +103,8 @@ def downsample_all_matrices( dirpath, num_downsamples=1 ):
                     'sep':'\t',
                     'header':None,
                     'index_col':None,
-                    'compression':'gzip'
+                    'compression':'gzip',
+                    'dtype':'uint32'
                 },
                 os.path.join(
                     downsample_dir_name,
