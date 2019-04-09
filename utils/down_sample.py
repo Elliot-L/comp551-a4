@@ -57,6 +57,7 @@ def downsample_matrix(csv_path, read_csv_params, output_file_path, ratio=16, see
 
         # manual memory management
         del contents
+
     else:
         # making a pandas dataframe
         arr = np.array( [ [ key[0], key[1], val ] for key, val in downsampled_counts.items() ], dtype='uint32' )
@@ -65,7 +66,7 @@ def downsample_matrix(csv_path, read_csv_params, output_file_path, ratio=16, see
         result_df = pd.DataFrame( arr )
         if verbose:
             print( "made downsampled dataframe" )
-        name = output_file_path + '_' + str(seed) + 'tsv.gz'
+        name = output_file_path + '_' + str(seed) + '.tsv.gz'
         result_df.to_csv(name, sep='\t', header=False, index=False, compression='gzip')
         print( f"done.\nsaved file as {name}\n")
         
