@@ -58,6 +58,7 @@ def gaussian_blur( in_array, gaussian_blur_function, gaussian_blur_parameters={}
     Returns:
 
         The blurred version of the input array (with the same type).
+
     """
     return_type = type( in_array )
     gaussian_blur_function = gaussian_blur_function.lower()
@@ -76,7 +77,7 @@ def gaussian_blur( in_array, gaussian_blur_function, gaussian_blur_parameters={}
         if return_type == csr_matrix:
             return csr_matrix( gaussian_filter( in_array.toarray().astype( float ), **gaussian_blur_parameters ) ) 
         else:
-            return gaussian_filter( in_array.toarray().astype( float ), **gaussian_blur_parameters )
+            return gaussian_filter( in_array.astype( float ), **gaussian_blur_parameters )
     else:
         if return_type == csr_matrix:
             return csr_matrix( cv2.GaussianBlur( in_array.toarray().astype( float ), **gaussian_blur_parameters ) )
