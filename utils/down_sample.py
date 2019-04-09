@@ -53,6 +53,9 @@ def downsample_matrix(csv_path, read_csv_params, output_file_path, ratio=16, see
         with gzip.open( name, 'wb' ) as outfile:
             with io.TextIOWrapper( outfile, encoding='utf-8' ) as encoded:
                 encoded.write( contents )
+        print( f"done.\nsaved file as {name}\n")
+
+        # manual memory management
         del contents
     else:
         # making a pandas dataframe
@@ -64,9 +67,13 @@ def downsample_matrix(csv_path, read_csv_params, output_file_path, ratio=16, see
             print( "made downsampled dataframe" )
         name = output_file_path + '_' + str(seed) + 'tsv.gz'
         result_df.to_csv(name, sep='\t', header=False, index=False, compression='gzip')
+        print( f"done.\nsaved file as {name}\n")
+        
+        # manual memory management
         del result_df 
         del arr
-    print('done')
+    
+    # manual memory management
     del pop 
     del downsampled_pop
     del df
@@ -124,18 +131,20 @@ if __name__ == '__main__':
     downsample_all_matrices(
         args.raw_data_dir,
         seeds_list=args.random_seeds
-    )    
+    )  
 
     # testing code for individual functions
     # to test downsample_matrix:
     #downsample_matrix(
-    #    "test_file_for_matrix_construction.tsv",
+    #    r"C:\Users\Samy\Dropbox\Samy_Dropbox\MSc\winter-2019-courses\COMP-551\comp551-a4\data\test\chr22_10kb.RAWobserved.gz",
     #    {
     #        'sep':'\t',
     #        'header':None,
     #        'index_col':None
     #    },
-    #    'downsample'
+    #    r"C:\Users\Samy\Dropbox\Samy_Dropbox\MSc\winter-2019-courses\COMP-551\comp551-a4\data\test\chr22_10kb.downsampled_ratio_10000_seed_1_for_debugging.RAWobserved.gz",
+    #    ratio=1000,
+    #    seed=2
     #)
     #################################
     # to test downsample_all_matrices:
