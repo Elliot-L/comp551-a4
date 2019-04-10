@@ -1,5 +1,6 @@
 import numpy as np 
 
+from math import sqrt
 from scipy.stats import pearsonr, spearmanr 
 
 def score_correlation( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", metric="pearson" ):
@@ -14,7 +15,7 @@ def score_correlation( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", met
 
         triangular: str indicating whether to compare the upper/lower triangular of the two input arrays. 
 
-        metric: str indicating whether to use the spearman correlation coefficient or pearson correlation coefficient.
+        metric: str indicating whether to use the spearman correlation coefficient, pearson correlation coefficient, or mean squared error.
 
     Returns:
 
@@ -29,17 +30,21 @@ def score_correlation( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", met
     
     metric = metric.lower()
     try:
-        assert metric in [ "pearson", "spearman" ]
+        assert metric in [ "pearson", "spearman", "mse" ]
     except AssertionError as ae:
-        raise AssertionError( f"\nmetric can be one of 'pearson' or 'spearman'; you passed: '{metric}'\n") from ae
+        raise AssertionError( f"\nmetric can be one of 'pearson', 'spearman', or 'mse'; you passed: '{metric}'\n") from ae
 
     inds = None
     if triangular == "already flattened":
         
         if metric == "pearson":
             return pearsonr( arr1, arr2 )
-        else: # metric == "spearman"
+        elif metric == "spearman":
             return spearmanr( arr1, arr2 )
+        else: # metric == "mse"
+            mse = ( ( arr1 - arr2 ) ** 2 ).mean( axis=None )
+            return mse, sqrt( mse )
+
 
     elif triangular == "upper":
         inds = np.triu_indices( arr1.shape[0] )
@@ -52,5 +57,8 @@ def score_correlation( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", met
 
     if metric == "pearson":
         return pearsonr( flat_arr1, flat_arr2 )
-    else: # metric == "spearman"
+    elif metric == "spearman":
         return spearmanr( flat_arr1, flat_arr2 )
+    else: # metric == "mse"
+        mse = ( ( arr1 - arr2 ) ** 2 ).mean( axis=None )
+        return mse, sqrt( mse )
