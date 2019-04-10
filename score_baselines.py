@@ -367,3 +367,7 @@ if __name__ == '__main__':
         diagonal_correlation_output_file=args.diagonal_output_file_path,
         metric=args.metric
     )
+
+    # example: if I wanted to go over all chromosomes except 1,2,3, I would run
+    # python score_baselines.py --raw-data-dir path/to/raw/data/dir --downsampled-data-dir path/to/downsampled/data/dir --skip-chrom 1 2 3 --metric mse --bandwidth-output-file-path path/to/output/file1.tsv --diagonal-output-file-path path/to/output/file2.tsv
+
