@@ -3,7 +3,7 @@ import numpy as np
 from math import sqrt
 from scipy.stats import pearsonr, spearmanr 
 
-def score_correlation( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", metric="pearson" ):
+def score_correlation_or_mse( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", metric="pearson" ):
     """
     Wrapper around scipy.stats.pearsonr, scipy.stats.spearmanr, with additional functionality for mse/rmse to compare/quantify the correlation between two matrices' values.
 
