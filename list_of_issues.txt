@@ -36,4 +36,6 @@ Specifications
 3. Don't know if they calculated their correlations on a symmetric matrix or not.
    FIX: assume they didn't (to avoid overcounting).
 
-
+Metrics:
+1. Using correlation statistics as a measure of performance isn't appropriate.
+   FIX: using a squared error distribution summary (mean + std dev) would be more informative of how close the predicted values   are to the ground truth values
