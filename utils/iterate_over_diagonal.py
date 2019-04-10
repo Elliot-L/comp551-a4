@@ -1,3 +1,5 @@
+import os, pickle
+
 import numpy as np 
 
 from tqdm import tqdm 
@@ -26,6 +28,41 @@ def kth_diag_indices( a:np.ndarray, k:int ):
         return rows[:-k], cols[k:]
     else:
         return rows, cols
+
+def make_training_data( raw_arr:np.ndarray, ds_arr:np.ndarray, bandwidth:int, window_dim:int, chrnum:int, pickle_file_path=None ):
+
+    # ensuring the matrices are of the same dimensions
+    if raw_arr.shape != ds_arr.shape:
+        largest_dim = max( raw_arr.shape[0], ds_arr.shape[0] )
+        if ds_arr.shape[0] != largest_dim:
+            ds_arr = np.pad( ds_arr, ( ( 0, largest_dim-ds_arr.shape[0] ), ( 0, largest_dim-ds_arr.shape[0] ) ), 'constant', constant_values=0 )
+        else: # ds_arr is larger than raw_arr (unlikely)
+            raw_arr = np.pad( raw_mat, ( ( 0, largest_dim-raw_arr.shape[0] ), ( 0, largest_dim-raw_arr.shape[0] ) ), 'constant', constant_values=0 )
+    assert raw_arr.shape == ds_arr.shape 
+    
+    window_pad = ( window_dim - 1 ) // 2
+    data_list = []    
+    for diag_offset in range( bandwidth ):
+
+        # rdci is short for relevant_diagonal_centerpoint_indices
+        rdci_rows, rdci_cols = kth_diag_indices( raw_arr, diag_offset ) # [ window_pad:-window_pad ]
+        print( rdci_rows, rdci_cols )
+
+        for rdci_row, rdci_col in zip( rdci_rows[ window_pad:-window_pad ], rdci_cols[ window_pad:-window_pad ] ): 
+            data_list.append( 
+                ( 
+                    ds_arr[ rdci_row-window_pad:rdci_row+window_pad+1, rdci_col-window_pad:rdci_col+window_pad+1 ], 
+                    raw_arr[ rdci_row, rdci_col ], 
+                    chrnum 
+                ) 
+            )
+
+    if pickle_file_path is not None:
+        with open( pickle_file_path, 'wb' ) as pickle_handle:
+            pickle.dump( data_list, pickle_handle, protocol=pickle.HIGHEST_PROTOCOL )
+        print( f"\nsaved output in\n{pickle_file_path}\n")
+            
+    return data_list
 
 def iterate_over_diagonals( arr:np.ndarray, bandwidth:int, window_dim:int ):
     """
