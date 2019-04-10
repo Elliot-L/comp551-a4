@@ -90,11 +90,12 @@ def downsample_all_matrices( dirpath, num_downsamples=1 ):
 
     # argument validation
     assert os.path.isdir( dirpath )
-    all_files = reversed( [ os.path.join( dirpath, f ) for f in os.listdir( dirpath ) if os.path.isfile( os.path.join( dirpath, f ) ) and ( "chr1_" in f ) ] )
-    
-    for rand_seed in range( 1, 1+num_downsamples ):
+    # all_files = reversed( [ os.path.join( dirpath, f ) for f in os.listdir( dirpath ) if os.path.isfile( os.path.join( dirpath, f ) ) and ( "chr1_" in f ) ] )
+    all_files = list(reversed([os.path.join(dirpath, f) for f in os.listdir(dirpath) if
+                   os.path.isfile(os.path.join(dirpath, f)) and ("chr" in f)]))
+    for rand_seed in range( 7, 7+num_downsamples ):
         downsample_dir_name = os.path.join( dirpath, f"downsampled_with_seed_{rand_seed}" )
-        os.makedirs( downsample_dir_name )
+        os.makedirs( downsample_dir_name, exist_ok=True )
         for raw_file in all_files:
             print( os.path.basename( raw_file ) )
             downsample_matrix(
@@ -126,8 +127,8 @@ if __name__ == '__main__':
     )
     '''
     downsample_all_matrices(
-        r"C:\Users\Samy\Dropbox\Samy_Dropbox\MSc\winter-2019-courses\COMP-551\comp551-a4\data\raw",
-        num_downsamples=2
+        "/Users/eigen/PycharmProjects/applied_ml_projs/a4/comp551-a4/raw",
+        num_downsamples=5
     )
     
     
