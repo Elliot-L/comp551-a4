@@ -4,6 +4,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+"""
+RNN model
+[169] -> [1] i.e. takes in flattened [13x13] input
+"""
+
+class RNN13(nn.Module):
+    def __init__(self, num_hidden=20, num_layers=2, batch_size=1):
+        super(RNN13, self).__init__()
+        self.batch_size = batch_size
+        self.num_hidden = num_hidden
+        self.rnn = nn.LSTM(input_size=169, hidden_size=num_hidden, num_layers=num_layers)
+        self.fc1 = nn.Linear(num_hidden, 1)
+
+    def forward(self, x):
+        out_rnn, h_rnn = self.rnn(x)
+        x = out_rnn.view(self.batch_size, self.num_hidden)
+        x = self.fc1(x)
+        return x
+
 
 """
 [13x13] -> [1]
