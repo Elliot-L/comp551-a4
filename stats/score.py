@@ -5,7 +5,7 @@ from scipy.stats import pearsonr, spearmanr
 
 def score_correlation( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", metric="pearson" ):
     """
-    Wrapper around scipy.stats.pearsonr and scipy.stats.spearmanr to quantify the correlation between two matrices' values.
+    Wrapper around scipy.stats.pearsonr, scipy.stats.spearmanr, with additional functionality for mse/rmse to compare/quantify the correlation between two matrices' values.
 
     Arguments:
 
@@ -19,7 +19,7 @@ def score_correlation( arr1:np.ndarray, arr2:np.ndarray, triangular="upper", met
 
     Returns:
 
-        The spearman or pearson correlation coefficient of the values in the two input arrays. 
+        The spearman or pearson correlation coefficient of the values in the two input arrays, or their mse and rmse. 
     """
     # argument validation 
     triangular = triangular.lower()
