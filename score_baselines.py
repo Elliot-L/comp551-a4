@@ -11,7 +11,7 @@ from stats.gaussian_blur_main import gaussian_blur, gkern, my_make_gaussian_kern
 from utils.iterate_over_diagonal import kth_diag_indices
 from utils.sparse_matrix_construction import create_matrix
 
-def assess_baselines( raw_data_dir, downsampled_data_dir, chromosome_range=list( range( 1,23 ) ), diag_offset_range=list( range( 0, 60 ) ), verbose=True, bandwidth_or_upper_triangular_correlation_output_file=None, diagonal_correlation_output_file=None, entire_triangular_comparison=False, metric='cor' ):
+def assess_baselines( raw_data_dir, downsampled_data_dir, chromosome_range=list( range( 1,23 ) ), diag_offset_range=list( range( 0, 60 ) ), verbose=True, bandwidth_or_upper_triangular_correlation_output_file=None, diagonal_correlation_output_file=None, entire_triangular_comparison=False, metric='cor', rescale_factor=1.0 ):
     """
     Documentation TBD, use the off-tabbed # comments to collapse sections.
     """ 
@@ -27,13 +27,14 @@ def assess_baselines( raw_data_dir, downsampled_data_dir, chromosome_range=list(
 # saving metadata in output files (1/2)
     if bandwidth_or_upper_triangular_correlation_output_file is not None:
         with open( bandwidth_or_upper_triangular_correlation_output_file, 'w' ) as output_file_handle:
-            output_file_handle.write( f"#raw_data_dir: {raw_data_dir.__repr__()}\n#downsampled_data_dir: {downsampled_data_dir.__repr__()}\n#downsample_random_seed: {downsample_random_seed}\n#chromosome_range: [{min(chromosome_range)},{max(chromosome_range)}]\n#diag_offset_range: [{min(diag_offset_range)},{max(diag_offset_range)}]\n#entire_triangular_comparison: {entire_triangular_comparison}\n" )
+            output_file_handle.write( f"#raw_data_dir: {raw_data_dir.__repr__()}\n#downsampled_data_dir: {downsampled_data_dir.__repr__()}\n#downsample_random_seed: {downsample_random_seed}\n#chromosome_range: [{min(chromosome_range)},{max(chromosome_range)}]\n#diag_offset_range: [{min(diag_offset_range)},{max(diag_offset_range)}]\n#entire_triangular_comparison: {entire_triangular_comparison}\n#rescale_factor: {rescale_factor}\n" )
     
 # saving metadata in output files (2/2)
     if diagonal_correlation_output_file is not None:
         with open( diagonal_correlation_output_file, 'w' ) as output_file_handle:
-            output_file_handle.write( f"#raw_data_dir: {raw_data_dir.__repr__()}\n#downsampled_data_dir: {downsampled_data_dir.__repr__()}\n#downsample_random_seed: {downsample_random_seed}\n#chromosome_range: [{min(chromosome_range)},{max(chromosome_range)}]\n#diag_offset_range: [{min(diag_offset_range)},{max(diag_offset_range)}]\n#entire_triangular_comparison: {entire_triangular_comparison}\n" )
+            output_file_handle.write( f"#raw_data_dir: {raw_data_dir.__repr__()}\n#downsampled_data_dir: {downsampled_data_dir.__repr__()}\n#downsample_random_seed: {downsample_random_seed}\n#chromosome_range: [{min(chromosome_range)},{max(chromosome_range)}]\n#diag_offset_range: [{min(diag_offset_range)},{max(diag_offset_range)}]\n#entire_triangular_comparison: {entire_triangular_comparison}\n#rescale_factor: {rescale_factor}\n" )
 
+# computational block
     for chrom_number in chromosome_range:
         
         if verbose: print( f"\nstarting with chromosome {chrom_number}\n" )
@@ -76,6 +77,8 @@ def assess_baselines( raw_data_dir, downsampled_data_dir, chromosome_range=list(
             output_type="numpy",
             output_file_path=None
         )
+        if rescale_factor != 1.0:
+            down_samp_mat *= rescale_factor
 
         if verbose: print( f"loaded matrices.\nsanity-checking dimensions..." )
 
