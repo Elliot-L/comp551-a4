@@ -30,7 +30,31 @@ def kth_diag_indices( a:np.ndarray, k:int ):
         return rows, cols
 
 def make_training_data( raw_arr:np.ndarray, ds_arr:np.ndarray, bandwidth:int, window_dim:int, chrnum:int, pickle_file_path=None ):
+    """
+    Function to iterate over raw_arr and ds_arr's 0-bandwidth's diagonals and extract a list of tuples of
+    ( window_dim x window_dim subarray of ds_arr centered along one of the diagonals, the corresponding subarray's centerpoint in raw_arr, and chrnum ).
 
+    Arguments:
+
+        raw_arr: np.ndarray corresponding to the reference array (the one used to select the second element of each tuple; the "target value").
+
+        ds_arr: np.ndarray corresponding to the array which we want to segment into subarrays.
+
+        bandwidth: int indicating how many diagonals to iterate over.
+
+        window_dim: odd integer indicating the dimension of the window/subarray.
+
+        chrnum: int specifying which chromosome these arrays were obtained from.
+
+        pickle_file_path: optional string/path specifying where to save the list of tuples.
+
+    Returns:
+
+        data_list:  list of tuples like the following:
+                    ( window_dim x window_dim subarray of ds_arr centered along one of the diagonals, 
+                    the corresponding subarray's centerpoint in raw_arr,
+                    chrnum )
+    """
     # ensuring the matrices are of the same dimensions
     if raw_arr.shape != ds_arr.shape:
         largest_dim = max( raw_arr.shape[0], ds_arr.shape[0] )
