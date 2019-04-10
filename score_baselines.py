@@ -355,6 +355,8 @@ if __name__ == '__main__':
                         help="path for the output file containing bandwidth-wise scoring." )
     parser.add_argument( '--diagonal-output-file-path', type=str, metavar='D', required=True,
                         help="path for the output file containing diagonal-wise scoring." )
+    parser.add_argument( '--rescale-factor-for-mse', type=float, metavar='F', default=1.0,
+                        help="factor (float) used to rescale the entries in the downsampled matrix before doing mse & rmse comparisons." )
 
     args = parser.parse_args()
 
@@ -368,7 +370,8 @@ if __name__ == '__main__':
         chromosome_range=chrom_range,
         bandwidth_or_upper_triangular_correlation_output_file=args.bandwidth_output_file_path,
         diagonal_correlation_output_file=args.diagonal_output_file_path,
-        metric=args.metric
+        metric=args.metric,
+        rescale_factor=args.rescale_factor_for_mse
     )
 
     # example: if I wanted to go over all chromosomes except 1,2,3, I would run
