@@ -29,7 +29,7 @@ def kth_diag_indices( a:np.ndarray, k:int ):
     else:
         return rows, cols
 
-def make_training_data( raw_arr:np.ndarray, ds_arr:np.ndarray, bandwidth:int, window_dim:int, chrnum:int, pickle_file_path=None ):
+def make_training_data_list( raw_arr:np.ndarray, ds_arr:np.ndarray, bandwidth:int, window_dim:int, chrnum:int, pickle_file_path=None ):
     """
     Function to iterate over raw_arr and ds_arr's 0-bandwidth's diagonals and extract a list of tuples of
     ( window_dim x window_dim subarray of ds_arr centered along one of the diagonals, the corresponding subarray's centerpoint in raw_arr, and chrnum ).
