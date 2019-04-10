@@ -61,7 +61,7 @@ def make_training_data( raw_arr:np.ndarray, ds_arr:np.ndarray, bandwidth:int, wi
         with open( pickle_file_path, 'wb' ) as pickle_handle:
             pickle.dump( data_list, pickle_handle, protocol=pickle.HIGHEST_PROTOCOL )
         print( f"\nsaved output in\n{pickle_file_path}\n")
-            
+
     return data_list
 
 def iterate_over_diagonals( arr:np.ndarray, bandwidth:int, window_dim:int ):
@@ -150,3 +150,8 @@ def make_mat_with_only_k_diags( upper_triangular_arr:np.ndarray, k=200 ):
         diag_inds = kth_diag_indices( upper_triangular_arr, diag )
         ret_arr[ diag_inds ] += upper_triangular_arr[ diag_inds ]
     return ret_arr 
+
+if __name__ == '__main__':
+    arr = np.random.randint( 0, 10, (10,10) )
+    arr[ np.tril_indices( arr.shape[0] ) ] = 0
+    make_training_data( arr, arr, 3, 5, 42, pickle_file_path="test_pickle_file_path.pickle" )
