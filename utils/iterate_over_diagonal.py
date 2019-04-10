@@ -29,65 +29,6 @@ def kth_diag_indices( a:np.ndarray, k:int ):
     else:
         return rows, cols
 
-def make_training_data_list( raw_arr:np.ndarray, ds_arr:np.ndarray, bandwidth:int, window_dim:int, chrnum:int, pickle_file_path=None ):
-    """
-    Function to iterate over raw_arr and ds_arr's 0-bandwidth's diagonals and extract a list of tuples of
-    ( window_dim x window_dim subarray of ds_arr centered along one of the diagonals, the corresponding subarray's centerpoint in raw_arr, and chrnum ).
-
-    Arguments:
-
-        raw_arr: np.ndarray corresponding to the reference array (the one used to select the second element of each tuple; the "target value").
-
-        ds_arr: np.ndarray corresponding to the array which we want to segment into subarrays.
-
-        bandwidth: int indicating how many diagonals to iterate over.
-
-        window_dim: odd integer indicating the dimension of the window/subarray.
-
-        chrnum: int specifying which chromosome these arrays were obtained from.
-
-        pickle_file_path: optional string/path specifying where to save the list of tuples.
-
-    Returns:
-
-        data_list:  list of tuples like the following:
-                    ( window_dim x window_dim subarray of ds_arr centered along one of the diagonals, 
-                    the corresponding subarray's centerpoint in raw_arr,
-                    chrnum )
-    """
-    # ensuring the matrices are of the same dimensions
-    if raw_arr.shape != ds_arr.shape:
-        largest_dim = max( raw_arr.shape[0], ds_arr.shape[0] )
-        if ds_arr.shape[0] != largest_dim:
-            ds_arr = np.pad( ds_arr, ( ( 0, largest_dim-ds_arr.shape[0] ), ( 0, largest_dim-ds_arr.shape[0] ) ), 'constant', constant_values=0 )
-        else: # ds_arr is larger than raw_arr (unlikely)
-            raw_arr = np.pad( raw_mat, ( ( 0, largest_dim-raw_arr.shape[0] ), ( 0, largest_dim-raw_arr.shape[0] ) ), 'constant', constant_values=0 )
-    assert raw_arr.shape == ds_arr.shape 
-    
-    window_pad = ( window_dim - 1 ) // 2
-    data_list = []    
-    for diag_offset in range( bandwidth ):
-
-        # rdci is short for relevant_diagonal_centerpoint_indices
-        rdci_rows, rdci_cols = kth_diag_indices( raw_arr, diag_offset ) # [ window_pad:-window_pad ]
-        print( rdci_rows, rdci_cols )
-
-        for rdci_row, rdci_col in zip( rdci_rows[ window_pad:-window_pad ], rdci_cols[ window_pad:-window_pad ] ): 
-            data_list.append( 
-                ( 
-                    ds_arr[ rdci_row-window_pad:rdci_row+window_pad+1, rdci_col-window_pad:rdci_col+window_pad+1 ], 
-                    raw_arr[ rdci_row, rdci_col ], 
-                    chrnum 
-                ) 
-            )
-
-    if pickle_file_path is not None:
-        with open( pickle_file_path, 'wb' ) as pickle_handle:
-            pickle.dump( data_list, pickle_handle, protocol=pickle.HIGHEST_PROTOCOL )
-        print( f"\nsaved output in\n{pickle_file_path}\n")
-
-    return data_list
-
 def iterate_over_diagonals( arr:np.ndarray, bandwidth:int, window_dim:int ):
     """
     Returns a list of (window_array centered at some point x,y on a diagonal (a np.ndarray), diagonal offset from main diagonal (an int)) tuples.
@@ -174,8 +115,3 @@ def make_mat_with_only_k_diags( upper_triangular_arr:np.ndarray, k=200 ):
         diag_inds = kth_diag_indices( upper_triangular_arr, diag )
         ret_arr[ diag_inds ] += upper_triangular_arr[ diag_inds ]
     return ret_arr 
-
-if __name__ == '__main__':
-    arr = np.random.randint( 0, 10, (10,10) )
-    arr[ np.tril_indices( arr.shape[0] ) ] = 0
-    make_training_data( arr, arr, 3, 5, 42, pickle_file_path="test_pickle_file_path.pickle" )
