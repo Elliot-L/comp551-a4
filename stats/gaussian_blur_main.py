@@ -11,7 +11,7 @@ from mpl_toolkits import mplot3d
 
 from skimage.filters import gaussian
 
-def my_make_gaussian_kernel( dim, mu: list, cov_mat: np.ndarray, xrange=(-5,5), showplot=False ):
+def my_make_gaussian_kernel( dim, mu: list, cov_mat: np.ndarray, xrange=(-5,5), showplot=False, normalize=False ):
     """
     Function used to define some multivariate gaussian kernels (and plot them).
     Ref: https://stackoverflow.com/questions/48465683/visualizing-a-multivariate-normal-distribution-with-numpy-and-matplotlib-in-3-di/48466089
@@ -21,11 +21,13 @@ def my_make_gaussian_kernel( dim, mu: list, cov_mat: np.ndarray, xrange=(-5,5), 
     pos = np.dstack( ( X, Y) )
     rv = multivariate_normal( mu, cov_mat )
     Z = rv.pdf( pos )
+    if normalize: 
+        Z /= np.sum( Z )
     if showplot:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.plot_surface(X, Y, Z)
-        fig.show()
+        plt.show()
     return Z
 
 def gaussian_blur( in_array, gaussian_blur_function, gaussian_blur_parameters={}, verbose=False ):
@@ -103,3 +105,23 @@ def Gaussian_filter(matrix, sigma=4, size=13):
             result[i][j] = np.sum(matrix[i - padding : i + padding + 1, j - padding : j + padding + 1] * kernel)
     return result
 
+def compare_gaussian_kernels( dim, sigma, my_make_gaussian_kernel_params={'showplot':'True','normalize':'True'} ):
+
+    their_gbk = gkern( dim, sigma )
+    my_gbk = my_make_gaussian_kernel( dim, [ 0.0, 0.0 ], np.eye(2)*sigma, **my_make_gaussian_kernel_params )
+    
+    print( np.sum( their_gbk ) ) 
+    print( np.sum( my_gbk ) )
+
+    fig = plt.figure() 
+    ax = fig.subplots( nrows=1, ncols=3 )
+    ax[0].imshow( their_gbk, cmap="Reds" )
+    ax[1].imshow( my_gbk, cmap="Reds" )
+    ax[2].imshow( my_gbk - their_gbk )
+    plt.show()
+
+
+
+if __name__ == "__main__":
+    #mine = my_make_gaussian_kernel( 13, mu=[.0,.0], cov_mat=np.eye(2)*4., showplot=True, normalize=True )   
+    compare_gaussian_kernels( 13, 4.0 )
