@@ -27,6 +27,7 @@ from models.cnn_models import *
 from models.srdensenet import Net as SRDenseNet
 from utils.unpickle import unpickle_data_pickle
 
+
 def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatch_size, logger):
     model.train()
     outputs, targets, original_dataset_indices = None, None, None
@@ -215,7 +216,7 @@ if __name__ == '__main__':
         print( f"\nThe log file will be saved in {logpath.__str__()}\n")
 
     # Model definition
-    model = ThreeLayerModel13().to( device ).double() # casting it to double because of some pytorch expected type peculiarities
+    model = ThreeLayerModel13(batch_size=args.batch_size).to( device ).double() # casting it to double because of some pytorch expected type peculiarities
     
     # Loss and optimizer
     # parametize this

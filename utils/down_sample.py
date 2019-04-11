@@ -132,7 +132,7 @@ if __name__ == '__main__':
     downsample_all_matrices(
         args.raw_data_dir,
         seeds_list=args.random_seeds
-    )  
+    )
 
     # testing code for individual functions
     # to test downsample_matrix:
