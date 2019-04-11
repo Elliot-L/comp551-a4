@@ -30,7 +30,7 @@ from utils.unpickle import unpickle_data_pickle
 
 def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatch_size, logger):
     model.train()
-    outputs, targets, original_dataset_indices = None, None, None
+    outputs, targets = None, None
     for batch_idx, (data, target) in enumerate(train_loader):
         # unsqueeze(x) adds a dimension in the xth-position from the left to deal with the Channels argument of the Conv2d layers
         data = data.unsqueeze( 1 )
@@ -44,7 +44,6 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
         if batch_idx == 0:
             outputs = output.clone().detach().data.numpy()
             targets = target.clone().detach().data.numpy()
-            original_dataset_indices = None
         else:
             outputs = np.vstack( ( outputs, output.clone().detach().data.numpy() ) )
             targets = np.hstack( ( targets, target.clone().detach().data.numpy() ) )
@@ -52,15 +51,12 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
 
         if ( batch_idx + 1 ) % args.log_interval == 0:
             
-            # compute current training accuracy
-            with torch.no_grad(): # so to not fuck up our gradients
-                preds = model( data )
-                preds = preds.argmax( dim=1, keepdim=True ) # get the index of the max log-probability
-                correct = preds.eq( target.view_as(preds)).sum().item()
-                
-                train_acc = 100. * correct / ( train_loader.batch_size )
+            # compute current training accuracy; this is basically the same as loss now
+            with torch.no_grad():  # so to not fuck up gradients; i think this is now unnecessary but leaving for now
 
-                print('Training Epoch: {} [{}/{} ({:.0f}%)]\t\tTrain Loss: {:.6f}\tTrain Accuracy:{:.1f}%\n'.format(
+                train_acc = torch.sqrt(loss)
+
+                print('Training Epoch: {} [{}/{} ({:.0f}%)]\t\tTrain Loss: {:.6f}\tTrain Accuracy:{:.1f}\n'.format(
                     epoch, batch_idx+1, len(train_loader),
                     100. * batch_idx / len(train_loader), loss.item(), train_acc ) )
                 
@@ -91,11 +87,11 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
                 for tag, images in info.items():
                     logger.image_summary(tag, images, step)'''
 
-    assert outputs.shape[1] == 10 
-    assert targets.ndim == 1
+    # assert outputs.shape[1] == 10
+    # assert targets.ndim == 1
     return outputs, targets
 
-def validate(args, model, loss_fn, device, validation_loader, epoch, logger, validation_split_fraction ):
+def validate(args, model, loss_fn, device, epoch, logger, validation_split_fraction ):
     model.eval()
     validation_loss = 0
     correct = 0
@@ -194,6 +190,12 @@ if __name__ == '__main__':
     tensor_dataset = TensorDataset( tensor_dataset, tensor_labels )
     assert len( data_arrays_list ) == len( tensor_dataset )
 
+    tensor_dataloader = DataLoader(
+        tensor_dataset,
+        batch_size=args.batch_size,
+        shuffle=True
+    )
+
     if args.verbose:
         print( ">>> Compiled tensor dataset" )
 
@@ -225,16 +227,15 @@ if __name__ == '__main__':
     print( "\n>>> Starting training\n" )
     
     # dummy declarations, get overwritten at the final epoch to contain 
-    # all_models_final_outputs: a 40,000 x ( 10 * # models ) feature numpy array
-    # all_corresponding_targets: a 40,000 target numpy vector containing the label for each row in all_models_final_outputs
     all_models_final_outputs, all_corresponding_targets = None, None 
       
     for epoch in range( args.epochs ):
-        training_output, training_targets = train( args, model, criterion, device, train_loader, optimizer, epoch, args.batch_size, logger )
+
+        training_output, training_targets = train( args, model, criterion, device, tensor_dataloader, optimizer, epoch, args.batch_size, logger )
 
         if epoch == ( args.epochs - 1 ): # we only care about the last epoch's output
-            all_models_final_outputs = np.vstack( ( training_output, validating_output ) )
-            all_corresponding_targets = np.hstack( ( training_targets, validating_targets ) ) # we're using hstack because these are vectors
+            all_models_final_outputs = training_output
+            all_corresponding_targets = training_targets, 
         
     # Saving output
     if (args.save_model):
@@ -252,8 +253,8 @@ if __name__ == '__main__':
         else:                
             training_and_validating_outputs =  np.hstack( ( all_models_final_outputs, all_corresponding_targets.reshape( -1, 1 ) ) )
 
-            training_indices = range( 0, int( len( train_loader.dataset ) * ( 1.0 - args.validation_split_fraction ) ) )
-            validating_indices = range( max( training_indices )+1, len( train_loader.dataset ) )
+            training_indices = range( 0, int( len( tensor_dataloader.dataset ) * ( 1.0 - args.validation_split_fraction ) ) )
+            validating_indices = range( max( training_indices )+1, len( tensor_dataloader.dataset ) )
 
             for m in range( args.n_models ):
                 column_range = list( range( m*10, (m+1)*10 ) )
@@ -281,7 +282,7 @@ if __name__ == '__main__':
             params_file.write( '\n' )
             params_file.write( optimizer.__repr__() )
             params_file.write( '\n' )
-            params_file.write( loss_fn.__repr__() )
+            params_file.write( criterion.__repr__() )
 
     print( f"\nThe log file was saved in {logpath.__str__()}\n")
     print( f"\nThe model and parameter save files were saved in { os.path.join( os.getcwd(), 'pickled-params' ) }\n" )
