@@ -27,7 +27,8 @@ from models.cnn_models import *
 from models.srdensenet import Net as SRDenseNet
 from utils.unpickle import unpickle_data_pickle
 
-def train(args, model, loss_fn, device, train_loader, validation_loader, optimizer, epoch, minibatch_size, logger):
+
+def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatch_size, logger):
     model.train()
     outputs, targets, original_dataset_indices = None, None, None
     for batch_idx, (data, target) in enumerate(train_loader):
@@ -209,7 +210,7 @@ if __name__ == '__main__':
         print( f"\nThe log file will be saved in {logpath.__str__()}\n")
 
     # Model definition
-    model = ThreeLayerModel13().to( device ).double() # casting it to double because of some pytorch expected type peculiarities
+    model = ThreeLayerModel13(batch_size=args.batch_size).to( device ).double() # casting it to double because of some pytorch expected type peculiarities
     
     # Loss and optimizer
     # parametize this
@@ -229,7 +230,7 @@ if __name__ == '__main__':
     all_models_final_outputs, all_corresponding_targets = None, None 
       
     for epoch in range( args.epochs ):
-        training_output, training_targets = train( args, model, criterion, device, train_loader, validation_loader, optimizer, epoch, args.batch_size, logger )
+        training_output, training_targets = train( args, model, criterion, device, train_loader, optimizer, epoch, args.batch_size, logger )
 
         if epoch == ( args.epochs - 1 ): # we only care about the last epoch's output
             all_models_final_outputs = np.vstack( ( training_output, validating_output ) )
