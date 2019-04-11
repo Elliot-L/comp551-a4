@@ -146,8 +146,10 @@ def validate(args, model, loss_fn, device, epoch, logger, validation_split_fract
 if __name__ == '__main__':
     # Training settings
     parser = argparse.ArgumentParser(description='Used to run CNN')
-    parser.add_argument( '--data-pickle-path', type=str, required=True, metavar='P',
-                        help="path to the file containing the pickled list of (array, target, chromosome number) tuples" )
+    parser.add_argument( '--data-pickle-dir-path', type=str, required=True, metavar='P',
+                        help="path to the directory containing each chromosome's pickleld list of (array, target, chromosome number) tuples." )
+    parser.add_argument( '--use-chroms', type=int, nargs='+', required=True, metavar='C',
+                        help="space-delimited list of chromosomes integers (e.g. 1 2 3 for chromosomes 1, 2, and 3) to use for this run." )
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--l2', type=float, default=0, metavar='N',
@@ -176,8 +178,22 @@ if __name__ == '__main__':
     
     # Dataset loading
     print( "\n>>> Loading datasets\n" )
+    
+    data_arrays_list, data_targets_list, data_chromnum_list = [],[],[]
+    files_in_dir = [ os.path.join( args.data_pickle_dir_path, f ) for f in os.listdir( args.data_pickle_dir_path ) if os.path.isfile( os.path.join( args.data_pickle_dir_path, f ) ) and '.pickle' in f ]
+    print( f"\n>>> Found {len( files_in_dir )} pickled files in {args.data_pickle_dir_path}\n" )
+    for chrnum in args.use_chroms:
+        identified_file = None
+        for file in files_in_dir:
+            if 'chr{}_'.format( chrnum ) in file:
+                identified_file = file
+                break 
+        assert identified_file is not None 
 
-    data_arrays_list, data_targets_list, data_chromnum_list = unpickle_data_pickle( args.data_pickle_path ) 
+        this_data_arrays_list, this_data_targets_list, this_data_chromnum_list = unpickle_data_pickle( identified_file ) 
+        data_arrays_list.extend( this_data_arrays_list )
+        data_targets_list.extend( this_data_targets_list )
+
     tensor_dataset = torch.tensor( data_arrays_list ).double() 
     tensor_labels = torch.tensor( data_targets_list ).double() # try .long() if you get a bug
     
@@ -186,14 +202,15 @@ if __name__ == '__main__':
         
     print( tensor_dataset.shape )
     print( tensor_labels.shape )
-    
+
     tensor_dataset = TensorDataset( tensor_dataset, tensor_labels )
-    assert len( data_arrays_list ) == len( tensor_dataset )
+    assert len( data_arrays_list ) == len( tensor_dataset ) == len( tensor_labels ) 
 
     tensor_dataloader = DataLoader(
         tensor_dataset,
         batch_size=args.batch_size,
-        shuffle=True
+        shuffle=True,
+        drop_last=True
     )
 
     if args.verbose:
@@ -243,10 +260,10 @@ if __name__ == '__main__':
 
         torch.save( model.state_dict(), os.path.join( os.getcwd(), 'pickled-params', start_timestamp+'_model.savefile' ) )
     
-            training_and_validating_outputs =  np.hstack( ( all_models_final_outputs, all_corresponding_targets.reshape( -1, 1 ) ) )
+        training_and_validating_outputs =  np.hstack( ( all_models_final_outputs, all_corresponding_targets.reshape( -1, 1 ) ) )
 
-            training_indices = range( 0, int( len( tensor_dataloader.dataset ) * ( 1.0 - args.validation_split_fraction ) ) )
-            validating_indices = range( max( training_indices )+1, len( tensor_dataloader.dataset ) )
+        training_indices = range( 0, int( len( tensor_dataloader.dataset ) * ( 1.0 - args.validation_split_fraction ) ) )
+        validating_indices = range( max( training_indices )+1, len( tensor_dataloader.dataset ) )
 
         with open( os.path.join( os.getcwd(), 'pickled-params', start_timestamp+'_params.savefile' ), 'w' ) as params_file:
             params_file.write( args.__repr__() )
