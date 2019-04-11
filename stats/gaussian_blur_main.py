@@ -6,6 +6,7 @@ from scipy.ndimage.filters import gaussian_filter
 from scipy.sparse import csr_matrix
 from scipy.stats import multivariate_normal
 import scipy.stats as st
+import scipy
 
 from mpl_toolkits import mplot3d
 

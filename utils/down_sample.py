@@ -102,7 +102,7 @@ def downsample_all_matrices( dirpath, seeds_list=1 ):
     
     for rand_seed in seeds_list:
         downsample_dir_name = os.path.join( dirpath, f"downsampled_with_seed_{rand_seed}" )
-        os.makedirs( downsample_dir_name )
+        os.makedirs( downsample_dir_name, exist_ok=True )
         for raw_file in all_files:
             print( os.path.basename( raw_file ) )
             downsample_matrix(
