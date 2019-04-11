@@ -22,7 +22,6 @@ holy fucking shit this is actually dumb  <- lol
 Model
 -Passes final output through ReLu, not necessarily wrong but weird as now optimizer doesn't see loss for negative outputs
 -Unclear what the arguments D_in and D_out should be used for, if anything
-
 Training, testing, validating
 1. At one point, they say they used chr1-17 as training and 18-22 as testing. But in another section, they say they used 1-7 as training and 13 as validation? 
    FIX: 
