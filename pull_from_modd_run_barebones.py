@@ -237,11 +237,14 @@ if __name__ == '__main__':
 
         if epoch == ( args.epochs - 1 ): # we only care about the last epoch's output
             all_models_final_outputs = training_output
-            all_corresponding_targets = training_targets, 
+            all_corresponding_targets = training_targets
         
     # Saving output
     if (args.save_model):
-  
+        
+        if not os.path.isdir( os.path.join( os.getcwd(), 'pickled-model-params' ) ): 
+            os.makedirs( os.path.join( os.getcwd(), 'pickled-model-params' ) )
+
         torch.save( model.state_dict(), os.path.join( os.getcwd(), 'pickled-params', start_timestamp+'_model.savefile' ) )
     
         if args.merge_train_validate_outputs:
