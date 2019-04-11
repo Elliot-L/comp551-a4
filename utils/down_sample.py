@@ -98,7 +98,6 @@ def downsample_all_matrices( dirpath, seeds_list=1 ):
 
     # argument validation
     assert os.path.isdir( dirpath )
-
     all_files = list( reversed( [ os.path.join( dirpath, f ) for f in os.listdir( dirpath ) if os.path.isfile( os.path.join( dirpath, f ) ) ] ) )
     
     for rand_seed in seeds_list:

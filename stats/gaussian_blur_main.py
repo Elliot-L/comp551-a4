@@ -78,7 +78,6 @@ def gaussian_blur( in_array, gaussian_blur_function, gaussian_blur_parameters={}
     # skimage.filters.gaussian is a wrapper around scipy.ndimage.filters.gaussian_filter
     if ( gaussian_blur_function == "scipy" ) or ( gaussian_blur_function == "skimage" ): 
         if return_type == csr_matrix:
-
             return csr_matrix( gaussian_filter( in_array.toarray().astype( float ), **gaussian_blur_parameters ) ) 
         else:
             return gaussian_filter( in_array.astype( float ), **gaussian_blur_parameters )

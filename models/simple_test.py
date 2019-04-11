@@ -7,10 +7,12 @@ Modified from cnn_trial file from assignment 3
 from __future__ import print_function
 
 import numpy as np
-import argparse, random, torch, torchvision
+import argparse, random, torch, torchvision, os
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-import os
+
+from datetime import datetime
+from logger import Logger
 from torchvision import transforms
 from torch.utils.data import DataLoader, TensorDataset
 # from tensorboardX import SummaryWriter
@@ -18,7 +20,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from models.cnn_models import *
 from models.srdensenet import Net as SRDenseNet
 
-def main(cli_args, device, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=True, verbose=True):
+def main(cli_args, device, logger, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=True, verbose=True):
 
     batch_size = cli_args.batch_size
 
@@ -85,9 +87,32 @@ def main(cli_args, device, logdir=os.path.join(os.getcwd(), 'logs'), shuffle=Tru
             optimizer.step()
 
             if batchidx % cli_args.log_interval == 0:
-                print(
-                    f"training epoch {epoch} / {cli_args.epochs}, batch #{batchidx} / {training_data.shape[0] // batch_size}\nLoss:\t{losses[-1]},\t\tAcc:\t{accuracies[-1]}\n")
+                print( f"training epoch {epoch} / {cli_args.epochs}, batch #{batchidx} / {training_data.shape[0] // batch_size}\nLoss:\t{losses[-1]},\t\tAcc:\t{accuracies[-1]}\n" )
 
+                # ================================================================== #
+                #     Tensorboard Logging (copied from modd_barebones_runner.py)     #
+                # ================================================================== #
+
+             # 1. Log scalar values (scalar summary)
+                info = {    
+                    'train loss': loss.item(), 'train accuracy': train_acc
+                }
+
+                step = batchidx + ( epoch* len( tensor_dl ) )
+
+                for tag, value in info.items():
+                    logger.scalar_summary( tag, value, step )
+
+                # 2. Log values and gradients of the parameters (histogram summary)
+                for tag, value in model.named_parameters():
+                    tag = tag.replace('.', '/')
+                    logger.histo_summary(tag, value.data.cpu().numpy(), step)
+                    logger.histo_summary(tag+'/grad', value.grad.data.cpu().numpy(), step)
+
+                # 3. Log training images (image summary), commented out manually
+                '''info = { 'images': images.view(-1, 64, 64)[:10].cpu().numpy() }
+                for tag, images in info.items():
+                    logger.image_summary(tag, images, step)'''
 
 if __name__ == '__main__':
 
@@ -128,5 +153,16 @@ if __name__ == '__main__':
 
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
 
-    main(args, device)
+    start_timestamp = datetime.now().strftime( '%Y-%m-%d_%H-%M' )
+
+    logpath = os.path.join( os.getcwd(), '..', 'tensorboard-logs', start_timestamp )
+
+    if not os.path.isdir( logpath ):
+        os.makedirs( logpath )
+    
+    logger = Logger( logpath )
+
+    print( f"\nThe log file will be saved in {logpath.__str__()}\n")
+
+    main(args, device, logger)
 
