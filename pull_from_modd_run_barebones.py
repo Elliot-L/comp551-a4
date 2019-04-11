@@ -47,30 +47,30 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
         else:
             outputs = np.vstack( ( outputs, output.clone().detach().data.numpy() ) )
             targets = np.hstack( ( targets, target.clone().detach().data.numpy() ) )
-        
 
-        if ( batch_idx + 1 ) % args.log_interval == 0:
-            
+
+        if ( batch_idx ) % args.log_interval == 0:
+
             # compute current training accuracy; this is basically the same as loss now
-            with torch.no_grad():  # so to not fuck up gradients; i think this is now unnecessary but leaving for now
+            with torch.no_grad():  # so to not fuck up gradients; i think this is now unnecessary but fine for now
 
                 train_acc = torch.sqrt(loss)
 
                 print('Training Epoch: {} [{}/{} ({:.0f}%)]\t\tTrain Loss: {:.6f}\tTrain Accuracy:{:.1f}\n'.format(
                     epoch, batch_idx+1, len(train_loader),
                     100. * batch_idx / len(train_loader), loss.item(), train_acc ) )
-                
+
 
                 # ================================================================== #
                 #                        Tensorboard Logging                         #
                 # ================================================================== #
 
                 # 1. Log scalar values (scalar summary)
-                info = {    
+                info = {
                     'train loss': loss.item(), 'train accuracy': train_acc
                 }
-                
-                step = batch_idx + ( epoch *  len( train_loader ) ) 
+
+                step = batch_idx + ( epoch *  len( train_loader ) )
                 print( f">>> Step:{step}\n" )
                 for tag, value in info.items():
                     logger.scalar_summary(tag, value, step)
@@ -193,7 +193,8 @@ if __name__ == '__main__':
     tensor_dataloader = DataLoader(
         tensor_dataset,
         batch_size=args.batch_size,
-        shuffle=True
+        shuffle=True,
+        drop_last=True
     )
 
     if args.verbose:
@@ -201,7 +202,7 @@ if __name__ == '__main__':
 
     start_timestamp = datetime.now().strftime( '%Y-%m-%d_%H-%M' )
 
-    logpath = os.path.join( os.getcwd(), '..', 'tensorboard-logs', start_timestamp )
+    logpath = os.path.join( os.getcwd(), 'tensorboard-logs', start_timestamp )
 
     if not os.path.isdir( logpath ):
         os.makedirs( logpath )
