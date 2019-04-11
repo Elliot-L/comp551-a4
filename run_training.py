@@ -24,7 +24,7 @@ from torch.utils.data.sampler import SubsetRandomSampler, SequentialSampler
 # from tensorboardX import SummaryWriter
 
 # local files
-from utils import unpickle
+from utils.unpickle import unpickle_data_pickle
 from models.cnn_models import *
 
 
@@ -194,31 +194,24 @@ if __name__ == '__main__':
     # Dataset loading
     print("\n>>> Loading datasets\n")
     tensor_dataset = None  # dummy declaration
-
+    inputs, outputs, chromosomes = unpickle_data_pickle('dev_data/pickled_data_for__(60_13)_chr9_10kb.RAWobserved.gz_7tsv.pickle')
     print('loading data')
-    training_data_raw = load_training_data('train_images.pkl', as_tensor=False)
-    # for debugging
-    # training_data_raw = load_training_data( 'train_images.pkl', as_tensor=True ).double()
 
-    training_data = torch.tensor(training_data_raw).double()
+    training_data = torch.tensor(inputs).double()
 
     # for debugging
     # training_data = training_data_raw
     if args.verbose:
         print(">>> Loaded and cleaned (extracted) training data")
 
-    training_labels = load_training_labels('train_labels.csv', as_tensor=True).long()
-
-    if args.rotate_images:
-        training_labels_one_set = load_training_labels('train_labels.csv', as_tensor=False)
-        training_labels = torch.tensor(np.hstack((training_labels_one_set, training_labels_one_set,
-                                                  training_labels_one_set, training_labels_one_set))).long()
+    # training_labels = load_training_labels('train_labels.csv', as_tensor=True).long()
+    training_targets = torch.tensor(outputs)
 
     print(training_data.shape)
-    print(training_labels.shape)
+    print(training_targets.shape)
 
-    tensor_dataset = TensorDataset(training_data, training_labels)
-    assert len(training_labels) == len(training_data)
+    tensor_dataset = TensorDataset(training_data, training_targets)
+    assert len(training_targets) == len(training_data)
     if args.verbose:
         print(">>> Compiled tensor dataset")
 
@@ -353,159 +346,61 @@ if __name__ == '__main__':
     # all_corresponding_targets: a 40,000 target numpy vector containing the label for each row in all_models_final_outputs
     all_models_final_outputs, all_corresponding_targets = None, None
 
-    if args.MNIST_sanity_check == True:
-        for epoch in range(args.epochs):
-            sanity_check_train(args, model, device, train_loader, optimizer, epoch,
-                               (1.0 - args.validation_split_fraction), logger)
-            sanity_check_validate(args, model, device, validation_loader, epoch, logger, args.validation_split_fraction)
-
-    else:
-        if args.n_models == 1:
-
-            for epoch in range(args.epochs):
-                training_output, training_targets = train(args, model, loss_fn, device, train_loader, validation_loader,
-                                                          optimizer, epoch, args.batch_size, logger)
-                validating_output, validating_targets = validate(args, model, loss_fn, device, validation_loader, epoch,
-                                                                 logger, args.validation_split_fraction)
-
-                if epoch == (args.epochs - 1):  # we only care about the last epoch's output
-                    all_models_final_outputs = np.vstack((training_output, validating_output))
-                    all_corresponding_targets = np.hstack(
-                        (training_targets, validating_targets))  # need to hstack vectors
-
-        else:
-            print("This doesn't work... Exiting now...")
-            raise SystemExit
-
-            for model_iteration in range(args.n_models):
-                this_train_loader, this_validation_loader = deepcopy(train_loader), deepcopy(validation_loader)
-                this_model = Elliot_Model().to(device).double()
-                print(f">>> training model {model_iteration+1} of {args.n_models}")
-
-                for epoch in range(args.epochs):
-                    training_output, training_targets = train(args, this_model, loss_fn, device, this_train_loader,
-                                                              this_validation_loader, optimizer, epoch, args.batch_size,
-                                                              loggers[model_iteration])
-                    validating_output, validating_targets = validate(args, this_model, loss_fn, device,
-                                                                     this_validation_loader, epoch,
-                                                                     loggers[model_iteration],
-                                                                     args.validation_split_fraction)
-
-                    if epoch == (args.epochs - 1):  # we only care about the last epoch's output
-                        if model_iteration == 0:
-                            all_models_final_outputs = np.vstack((training_output, validating_output))
-                            all_corresponding_targets = np.hstack(
-                                (training_targets, validating_targets))  # need to hstack vectors
-
-                        else:
-                            all_models_final_outputs = np.hstack((all_models_final_outputs, np.vstack(
-                                (training_output, validating_output))))  # hstack is not a typo
-
     # Saving output
     if (args.save_model):
+        torch.save(model.state_dict(),
+                   os.path.join(os.getcwd(), 'pickled-params', start_timestamp + '_model.savefile'))
 
-        if args.n_models > 1:
+        if args.merge_train_validate_outputs:
+            pickle_path = os.path.join(os.getcwd(), 'pickled-params',
+                                       start_timestamp + "_merged_training_and_validating_outputs_and_targets.pickle")
 
-            for e, this_model in enumerate(models):
-                torch.save(model.state_dict(), os.path.join(os.getcwd(), 'pickled-params',
-                                                            start_timestamp + f"_model_{e+1}_of_{args.n_models}.savefile"))
+            with open(pickle_path, 'wb') as meta_clf_feature_mat:
+                pickle.dump(np.hstack((all_models_final_outputs, all_corresponding_targets.reshape(-1, 1))),
+                            meta_clf_feature_mat, protocol=pickle.HIGHEST_PROTOCOL)
 
-            if args.merge_train_validate_outputs:
-                pickle_path = os.path.join(os.getcwd(), 'pickled-params',
-                                           start_timestamp + f"_{args.n_models}_models_merged_training_and_validating_outputs_and_targets.pickle")
-                with open(pickle_path, 'wb') as meta_clf_feature_mat:
-                    pickle.dump(np.hstack((all_models_final_outputs, all_corresponding_targets.reshape(-1, 1))),
-                                meta_clf_feature_mat, protocol=pickle.HIGHEST_PROTOCOL)
-
-                print(
-                    f">>> The <features from training & validating><labels from training & validating> matrix pickle for meta-classification is saved under\n{pickle_path}")
-
-            else:
-                training_and_validating_outputs = np.hstack(
-                    (all_models_final_outputs, all_corresponding_targets.reshape(-1, 1)))
-
-                training_indices = range(0, int(len(train_loader.dataset) * (1.0 - args.validation_split_fraction)))
-                validating_indices = range(max(training_indices) + 1, len(train_loader.dataset))
-
-                for m in range(args.n_models):
-                    column_range = list(range(m * 10, (m + 1) * 10))
-                    column_range.append(training_and_validating_outputs.shape[1] - 1)
-                    output_subarray_from_training = training_and_validating_outputs[training_indices, :]
-                    output_subarray_from_training = output_subarray_from_training[:, column_range]
-
-                    output_subarray_from_validating = training_and_validating_outputs[validating_indices, :]
-                    output_subarray_from_validating = output_subarray_from_validating[:, column_range]
-
-                    pickle_path = os.path.join(os.getcwd(), 'pickled-params',
-                                               start_timestamp + f"_model_{m+1}_training_outputs_and_targets.pickle")
-                    with open(pickle_path, 'wb') as handle:
-                        pickle.dump(output_subarray_from_training, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-                    print(
-                        f">>> The <features from training><labels from training> matrix pickle for meta-classification is saved under\n{pickle_path}")
-
-                    pickle_path = os.path.join(os.getcwd(), 'pickled-params',
-                                               start_timestamp + f"_model_{m+1}_validating_outputs_and_targets.pickle")
-                    with open(pickle_path, 'wb') as handle:
-                        pickle.dump(output_subarray_from_validating, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-                    print(
-                        f">>> The <features from validating><labels from validating> matrix pickle for meta-classification is saved under\n{pickle_path}")
+            print(
+                f">>> The <features from training & validating><labels from training & validating> matrix pickle for meta-classification is saved under\n{pickle_path}")
 
         else:
-            torch.save(model.state_dict(),
-                       os.path.join(os.getcwd(), 'pickled-params', start_timestamp + '_model.savefile'))
+            training_and_validating_outputs = np.hstack(
+                (all_models_final_outputs, all_corresponding_targets.reshape(-1, 1)))
 
-            if args.merge_train_validate_outputs:
+            training_indices = range(0, int(len(train_loader.dataset) * (1.0 - args.validation_split_fraction)))
+            validating_indices = range(max(training_indices) + 1, len(train_loader.dataset))
+
+            for m in range(args.n_models):
+                column_range = list(range(m * 10, (m + 1) * 10))
+                column_range.append(training_and_validating_outputs.shape[1] - 1)
+                output_subarray_from_training = training_and_validating_outputs[training_indices, :]
+                output_subarray_from_training = output_subarray_from_training[:, column_range]
+
+                output_subarray_from_validating = training_and_validating_outputs[validating_indices, :]
+                output_subarray_from_validating = output_subarray_from_validating[:, column_range]
+
                 pickle_path = os.path.join(os.getcwd(), 'pickled-params',
-                                           start_timestamp + "_merged_training_and_validating_outputs_and_targets.pickle")
-
-                with open(pickle_path, 'wb') as meta_clf_feature_mat:
-                    pickle.dump(np.hstack((all_models_final_outputs, all_corresponding_targets.reshape(-1, 1))),
-                                meta_clf_feature_mat, protocol=pickle.HIGHEST_PROTOCOL)
+                                           start_timestamp + f"_training_outputs_and_targets.pickle")
+                with open(pickle_path, 'wb') as handle:
+                    pickle.dump(output_subarray_from_training, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
                 print(
-                    f">>> The <features from training & validating><labels from training & validating> matrix pickle for meta-classification is saved under\n{pickle_path}")
+                    f">>> The <features from training><labels from training> matrix pickle for meta-classification is saved under\n{pickle_path}")
 
-            else:
-                training_and_validating_outputs = np.hstack(
-                    (all_models_final_outputs, all_corresponding_targets.reshape(-1, 1)))
+                pickle_path = os.path.join(os.getcwd(), 'pickled-params',
+                                           start_timestamp + f"_validating_outputs_and_targets.pickle")
+                with open(pickle_path, 'wb') as handle:
+                    pickle.dump(output_subarray_from_validating, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-                training_indices = range(0, int(len(train_loader.dataset) * (1.0 - args.validation_split_fraction)))
-                validating_indices = range(max(training_indices) + 1, len(train_loader.dataset))
+                print(
+                    f">>> The <features from validating><labels from validating> matrix pickle for meta-classification is saved under\n{pickle_path}")
 
-                for m in range(args.n_models):
-                    column_range = list(range(m * 10, (m + 1) * 10))
-                    column_range.append(training_and_validating_outputs.shape[1] - 1)
-                    output_subarray_from_training = training_and_validating_outputs[training_indices, :]
-                    output_subarray_from_training = output_subarray_from_training[:, column_range]
-
-                    output_subarray_from_validating = training_and_validating_outputs[validating_indices, :]
-                    output_subarray_from_validating = output_subarray_from_validating[:, column_range]
-
-                    pickle_path = os.path.join(os.getcwd(), 'pickled-params',
-                                               start_timestamp + f"_training_outputs_and_targets.pickle")
-                    with open(pickle_path, 'wb') as handle:
-                        pickle.dump(output_subarray_from_training, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-                    print(
-                        f">>> The <features from training><labels from training> matrix pickle for meta-classification is saved under\n{pickle_path}")
-
-                    pickle_path = os.path.join(os.getcwd(), 'pickled-params',
-                                               start_timestamp + f"_validating_outputs_and_targets.pickle")
-                    with open(pickle_path, 'wb') as handle:
-                        pickle.dump(output_subarray_from_validating, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-                    print(
-                        f">>> The <features from validating><labels from validating> matrix pickle for meta-classification is saved under\n{pickle_path}")
-
-        with open(os.path.join(os.getcwd(), 'pickled-params', start_timestamp + '_params.savefile'),
-                  'w') as params_file:
-            params_file.write(args.__repr__())
-            params_file.write('\n')
-            params_file.write(optimizer.__repr__())
-            params_file.write('\n')
-            params_file.write(loss_fn.__repr__())
+    with open(os.path.join(os.getcwd(), 'pickled-params', start_timestamp + '_params.savefile'),
+              'w') as params_file:
+        params_file.write(args.__repr__())
+        params_file.write('\n')
+        params_file.write(optimizer.__repr__())
+        params_file.write('\n')
+        params_file.write(loss_fn.__repr__())
 
     print(f"\nThe log file was saved in {logpath.__str__()}\n")
     print(f"\nThe model and parameter save files were saved in { os.path.join( os.getcwd(), 'pickled-params' ) }\n")
