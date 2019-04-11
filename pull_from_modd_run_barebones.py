@@ -30,7 +30,7 @@ from utils.unpickle import unpickle_data_pickle
 
 def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatch_size, logger):
     model.train()
-    outputs, targets, original_dataset_indices = None, None, None
+    outputs, targets = None, None
     for batch_idx, (data, target) in enumerate(train_loader):
         # unsqueeze(x) adds a dimension in the xth-position from the left to deal with the Channels argument of the Conv2d layers
         data = data.unsqueeze( 1 )
@@ -44,7 +44,6 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
         if batch_idx == 0:
             outputs = output.clone().detach().data.numpy()
             targets = target.clone().detach().data.numpy()
-            original_dataset_indices = None
         else:
             outputs = np.vstack( ( outputs, output.clone().detach().data.numpy() ) )
             targets = np.hstack( ( targets, target.clone().detach().data.numpy() ) )
@@ -52,15 +51,12 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
 
         if ( batch_idx + 1 ) % args.log_interval == 0:
             
-            # compute current training accuracy
-            with torch.no_grad(): # so to not fuck up our gradients
-                preds = model( data )
-                preds = preds.argmax( dim=1, keepdim=True ) # get the index of the max log-probability
-                correct = preds.eq( target.view_as(preds)).sum().item()
-                
-                train_acc = 100. * correct / ( train_loader.batch_size )
+            # compute current training accuracy; this is basically the same as loss now
+            with torch.no_grad():  # so to not fuck up gradients; i think this is now unnecessary but leaving for now
 
-                print('Training Epoch: {} [{}/{} ({:.0f}%)]\t\tTrain Loss: {:.6f}\tTrain Accuracy:{:.1f}%\n'.format(
+                train_acc = torch.sqrt(loss)
+
+                print('Training Epoch: {} [{}/{} ({:.0f}%)]\t\tTrain Loss: {:.6f}\tTrain Accuracy:{:.1f}\n'.format(
                     epoch, batch_idx+1, len(train_loader),
                     100. * batch_idx / len(train_loader), loss.item(), train_acc ) )
                 
@@ -91,8 +87,8 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
                 for tag, images in info.items():
                     logger.image_summary(tag, images, step)'''
 
-    assert outputs.shape[1] == 10 
-    assert targets.ndim == 1
+    # assert outputs.shape[1] == 10
+    # assert targets.ndim == 1
     return outputs, targets
 
 def validate(args, model, loss_fn, device, epoch, logger, validation_split_fraction ):
@@ -160,8 +156,8 @@ if __name__ == '__main__':
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 0.001)')
-    parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
-                        help='SGD momentum (default: 0.5)')
+    parser.add_argument('--momentum', type=float, default=0.0, metavar='M',
+                        help='SGD momentum (default: 0.0)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
@@ -205,7 +201,7 @@ if __name__ == '__main__':
 
     start_timestamp = datetime.now().strftime( '%Y-%m-%d_%H-%M' )
 
-    logpath = os.path.join( os.getcwd(), '..', 'tensorboard-logs', start_timestamp )
+    logpath = os.path.join( os.getcwd(), 'tensorboard-logs', start_timestamp )
 
     if not os.path.isdir( logpath ):
         os.makedirs( logpath )
@@ -216,14 +212,13 @@ if __name__ == '__main__':
         print( f"\nThe log file will be saved in {logpath.__str__()}\n")
 
     # Model definition
-    model = ThreeLayerModel13(batch_size=args.batch_size).to( device ).double() # casting it to double because of some pytorch expected type peculiarities
+    model = ThreeLayerModel13( batch_size=args.batch_size ).to( device ).double() # casting it to double because of some pytorch expected type peculiarities
     
     # Loss and optimizer
     # parametize this
     optimizer = torch.optim.Adam(  
         model.parameters(),
         lr=args.lr,
-        # momentum=args.momentum
     )
 
     criterion = nn.MSELoss() 
@@ -241,47 +236,17 @@ if __name__ == '__main__':
             all_corresponding_targets = training_targets
         
     # Saving output
-    if (args.save_model):
+    if ( args.save_model ):
         
         if not os.path.isdir( os.path.join( os.getcwd(), 'pickled-model-params' ) ): 
             os.makedirs( os.path.join( os.getcwd(), 'pickled-model-params' ) )
 
         torch.save( model.state_dict(), os.path.join( os.getcwd(), 'pickled-params', start_timestamp+'_model.savefile' ) )
     
-        if args.merge_train_validate_outputs:
-            pickle_path = os.path.join( os.getcwd(), 'pickled-params', start_timestamp+"_merged_training_and_validating_outputs_and_targets.pickle" )
-            
-            with open( pickle_path, 'wb' ) as meta_clf_feature_mat:
-                pickle.dump( np.hstack( ( all_models_final_outputs, all_corresponding_targets.reshape( -1, 1 ) ) ) , meta_clf_feature_mat, protocol=pickle.HIGHEST_PROTOCOL )
-
-            print( f">>> The <features from training & validating><labels from training & validating> matrix pickle for meta-classification is saved under\n{pickle_path}" )
-        
-        else:                
             training_and_validating_outputs =  np.hstack( ( all_models_final_outputs, all_corresponding_targets.reshape( -1, 1 ) ) )
 
-            training_indices = range( 0, int( len( train_loader.dataset ) * ( 1.0 - args.validation_split_fraction ) ) )
-            validating_indices = range( max( training_indices )+1, len( train_loader.dataset ) )
-
-            for m in range( args.n_models ):
-                column_range = list( range( m*10, (m+1)*10 ) )
-                column_range.append( training_and_validating_outputs.shape[1]-1 )
-                output_subarray_from_training = training_and_validating_outputs[ training_indices, : ]
-                output_subarray_from_training = output_subarray_from_training[ :, column_range ]
-                
-                output_subarray_from_validating = training_and_validating_outputs[ validating_indices, : ]
-                output_subarray_from_validating = output_subarray_from_validating[ :, column_range ]
-
-                pickle_path = os.path.join( os.getcwd(), 'pickled-params', start_timestamp+f"_training_outputs_and_targets.pickle" )
-                with open( pickle_path, 'wb' ) as handle:
-                    pickle.dump( output_subarray_from_training , handle, protocol=pickle.HIGHEST_PROTOCOL )
-                
-                print( f">>> The <features from training><labels from training> matrix pickle for meta-classification is saved under\n{pickle_path}" )
-
-                pickle_path = os.path.join( os.getcwd(), 'pickled-params', start_timestamp+f"_validating_outputs_and_targets.pickle" )
-                with open( pickle_path, 'wb' ) as handle:
-                    pickle.dump( output_subarray_from_validating , handle, protocol=pickle.HIGHEST_PROTOCOL )
-                
-                print( f">>> The <features from validating><labels from validating> matrix pickle for meta-classification is saved under\n{pickle_path}" )
+            training_indices = range( 0, int( len( tensor_dataloader.dataset ) * ( 1.0 - args.validation_split_fraction ) ) )
+            validating_indices = range( max( training_indices )+1, len( tensor_dataloader.dataset ) )
 
         with open( os.path.join( os.getcwd(), 'pickled-params', start_timestamp+'_params.savefile' ), 'w' ) as params_file:
             params_file.write( args.__repr__() )
