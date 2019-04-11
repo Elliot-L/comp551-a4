@@ -13,7 +13,7 @@ Down-sampling
     and explain how our down-sampling scheme (option b)) accounts for the problem in a).
     
 Blurring
-holy fucking shit this is actually dumb
+holy fucking shit this is actually dumb  <- lol
 1. They chose not to use standard packages to blur their matrices with a gaussian kernel, and instead made their own kernel from scratch. 
   1.1 problem because the coder straight up copy-pasted that code from a stackoverflow thread (100% identical at character level), and the author of that answer later acknowledged that his code was wrong and fixed it (but the code on the github for HiCPlus is still wrong!)
   1.2 the blurring function doesn't even run as-is...
@@ -22,3 +22,25 @@ holy fucking shit this is actually dumb
 Model
 -Passes final output through ReLu, not necessarily wrong but weird as now optimizer doesn't see loss for negative outputs
 -Unclear what the arguments D_in and D_out should be used for, if anything
+
+Training, testing, validating
+1. At one point, they say they used chr1-17 as training and 18-22 as testing. But in another section, they say they used 1-7 as training and 13 as validation? 
+   FIX: 
+2. Chr 21, 22 have unmapped p-arms, so they aren't representative of most chromosomes (overinflated correlation stats)
+   FIX: don't use BOTH 21 and 22 in the same test/train/val split
+
+Repetition:
+1. They never mention repeating their experiment with > 1 replicate (they don't have error bars on their charts either).
+   FIX: do 5 diff random downsampling runs, treat each of the 5 downsampled datasets as replicates, hopefully be able to run everything on all 5 replicates and get stats on those (could do more if we have time).
+   
+Specifications
+1. How do they treat the symmetric matrices (esp. near the main diag)?
+   FIX: assume they didn't worry about that, so we won't either (it's debatable though).
+2. Is the 2Mb bandwidth used wrt the center of the window or the far left corner of the square window?
+   FIX: assume it is wrt the center of the window
+3. Don't know if they calculated their correlations on a symmetric matrix or not.
+   FIX: assume they didn't (to avoid overcounting).
+
+Metrics:
+1. Using correlation statistics as a measure of performance isn't appropriate.
+   FIX: using a squared error distribution summary (mean + std dev) would be more informative of how close the predicted values   are to the ground truth values
