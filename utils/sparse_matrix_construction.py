@@ -80,7 +80,7 @@ def create_matrix( path_to_downsampled_file, read_csv_params, output_type:str, o
         raise AssertionError( f"\noutput_type can be one of 'numpy', 'pandas', or 'sparse'; you passed: '{output_type}'\n") from ae
     
     try:
-        assert os.path.isfile( path_to_downsampled_file )
+        assert ( os.path.isfile( path_to_downsampled_file ) or os.path.basename( path_to_downsampled_file )[-3:] == '.gz' )
     except AssertionError as ae:
         raise FileNotFoundError( f"\npath_to_downsampled_file ({path_to_downsampled_file}) wasn't found\n" ) from ae
 
