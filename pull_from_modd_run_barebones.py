@@ -287,7 +287,7 @@ if __name__ == '__main__':
             params_file.write( '\n' )
             params_file.write( optimizer.__repr__() )
             params_file.write( '\n' )
-            params_file.write( loss_fn.__repr__() )
+            params_file.write( criterion.__repr__() )
 
     print( f"\nThe log file was saved in {logpath.__str__()}\n")
     print( f"\nThe model and parameter save files were saved in { os.path.join( os.getcwd(), 'pickled-params' ) }\n" )
