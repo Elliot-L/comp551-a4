@@ -1,12 +1,8 @@
 import pickle
-def open1():
-    pickleFile = open("filename.pickle", 'rb')
-    file = pickle.load(pickleFile)
-    list_of_arr = []
-    list_of_targets = []
-    for i in file:
-        list_of_arr.append(i[0])
-        list_of_targets.append(i[1])
-    return list_of_arr,list_of_targets
+def unpickle_data_pickle( path_to_pickled_file ):
 
-print(open1())
+    with open( path_to_pickled_file, 'rb' ) as pickle_handle:
+        list_of_arr, list_of_targets, list_of_chroms = zip( *pickle.load( pickle_handle ) )
+    
+    return list_of_arr, list_of_targets, list_of_chroms
+
