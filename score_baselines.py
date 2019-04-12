@@ -77,8 +77,19 @@ def assess_baselines( raw_data_dir, downsampled_data_dir, chromosome_range=list(
             output_type="numpy",
             output_file_path=None
         )
+
         if rescale_factor != 1.0:
+            sum_before_rescale = np.sum( down_samp_mat )
             down_samp_mat *= rescale_factor
+            sum_after_rescale = np.sum( down_samp_mat )
+
+            if bandwidth_or_upper_triangular_correlation_output_file is not None:
+                with open( bandwidth_or_upper_triangular_correlation_output_file, 'a' ) as output_file_handle:
+                    output_file_handle.write( f"\n == chromosome {chrom_number}'s sum before rescaling by {rescale_factor}: {sum_before_rescale}; after rescaling: {sum_after_rescale} == \n" )
+        
+            if diagonal_correlation_output_file is not None:
+                with open( diagonal_correlation_output_file, 'a' ) as output_file_handle:
+                    output_file_handle.write( f"\n == chromosome {chrom_number}'s sum before rescaling by {rescale_factor}: {sum_before_rescale}; after rescaling: {sum_after_rescale} == \n" )
 
         if verbose: print( f"loaded matrices.\nsanity-checking dimensions..." )
 
