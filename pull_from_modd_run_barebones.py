@@ -112,7 +112,6 @@ def validate(args, model, loss_fn, device, validation_loader, epoch, logger):
     validation_loss /= ( validation_loader.batch_size * len( validation_loader ) )
     # recall that notion of accuracy is weird for regression
     
-    # what is this line for?
     accuracy = torch.sqrt(validation_loss).item()
 
     print('\nValidation set:\t\tAverage loss: {:.4f}, Accuracy: ({:.1f})\n'.format(
