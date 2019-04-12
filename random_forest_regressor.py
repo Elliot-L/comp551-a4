@@ -45,24 +45,16 @@ if __name__ == '__main__':
     if args.verbose:
         print('Data loaded')
 
-    # model = RandomForestRegressor(random_state=args.seed)
-
     # small sample for now to debug, needs to be replaced with real full train / test data
-    X_train = X[:100]
-    y_train = y[:100]
+    X_train = X[:10000]
+    y_train = y[:10000]
 
-    X_test = X[100:200]
-    y_test = y[100:200]
+    X_test = X[10000:20000]
+    y_test = y[10000:20000]
 
     X_train = np.array([x.flatten() for x in X_train])
     X_test = np.array([x.flatten() for x in X_test])
 
-    # model.fit(X_train, y_train)
-    #
-    # y_hat = model.predict(X_test)
-    # error = mean_squared_error(y_test, y_hat)
-    # print('MSE on test set: ' + str(error))
-    # print('Mean error on test set: ' + str(np.sqrt(error)))
     mses, errors = train_and_test(X_train, y_train, X_test, y_test, args)
 
     print('All errors mean:' + str(np.mean(errors)))
