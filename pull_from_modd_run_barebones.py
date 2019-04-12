@@ -39,7 +39,7 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
         output = model(data)
         loss = loss_fn(output, target)
         loss.backward()
-        optimizer.step()
+        optimizer.step()    
         
         if batch_idx == 0:
             outputs = output.clone().detach().data.numpy()
@@ -47,12 +47,12 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
         else:
             outputs = np.vstack( ( outputs, output.clone().detach().data.numpy() ) )
             targets = np.hstack( ( targets, target.clone().detach().data.numpy() ) )
-        
 
-        if ( batch_idx + 1 ) % args.log_interval == 0:
-            
+
+        if ( batch_idx ) % args.log_interval == 0:
+
             # compute current training accuracy; this is basically the same as loss now
-            with torch.no_grad():  # so to not fuck up gradients; i think this is now unnecessary but leaving for now
+            with torch.no_grad():  # so to not fuck up gradients; i think this is now unnecessary but fine for now
 
                 train_acc = torch.sqrt(loss)
 
@@ -69,8 +69,8 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
                 info = {    
                     'train loss': loss.item(), 'train accuracy': train_acc.item()
                 }
-                
-                step = batch_idx + ( epoch *  len( train_loader ) ) 
+
+                step = batch_idx + ( epoch *  len( train_loader ) )
                 print( f">>> Step:{step}\n" )
                 for tag, value in info.items():
                     logger.scalar_summary(tag, value, step)
