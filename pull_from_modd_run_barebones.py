@@ -39,7 +39,7 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
         output = model(data)
         loss = loss_fn(output, target)
         loss.backward()
-        optimizer.step()
+        optimizer.step()    
         
         if batch_idx == 0:
             outputs = output.clone().detach().data.numpy()
