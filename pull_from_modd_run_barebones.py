@@ -39,7 +39,7 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
         output = model(data)
         loss = loss_fn(output, target)
         loss.backward()
-        optimizer.step()    
+        optimizer.step()
         
         if batch_idx == 0:
             outputs = output.clone().detach().data.numpy()
@@ -87,24 +87,21 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
                 for tag, images in info.items():
                     logger.image_summary(tag, images, step)'''
 
-    # assert outputs.shape[1] == 10
-    # assert targets.ndim == 1
     return outputs, targets
 
-def validate(args, model, loss_fn, device, epoch, logger, validation_split_fraction ):
+
+def validate(args, model, loss_fn, device, validation_loader, epoch, logger, validation_split_fraction ):
     model.eval()
     validation_loss = 0
     correct = 0
     outputs, targets = None, None 
     with torch.no_grad():
         for batch_idx, (data, target) in enumerate(validation_loader):
-            data = data.unsqueeze( 1 )
+            data = data.unsqueeze(1)
             data, target = data.to(device), target.to(device)
             output = model(data)
-            validation_loss += loss_fn(output, target).item() # sum up batch loss
-            pred = output.argmax(dim=1, keepdim=True) # get the index of the max log-probability
-            correct += pred.eq(target.view_as(pred)).sum().item()
-        
+            validation_loss += loss_fn(output, target).item()  # sum up batch loss
+
             if batch_idx == 0:
                 outputs = output.data.numpy()
                 targets = target.data.numpy()
@@ -113,11 +110,11 @@ def validate(args, model, loss_fn, device, epoch, logger, validation_split_fract
                 targets = np.hstack( ( targets, target.data.numpy() ) )
 
     validation_loss /= ( validation_loader.batch_size * len( validation_loader ) )
-    accuracy = 100. * correct / ( validation_loader.batch_size * len( validation_loader ) )
+    # recall that notion of accuracy is weird for regression
+    accuracy = torch.sqrt(validation_loss).item()
 
-    print('\nValidation set:\t\tAverage loss: {:.4f}, Accuracy: {}/{} ({:.1f}%)\n'.format(
-        validation_loss, correct, ( validation_loader.batch_size * len( validation_loader ) ),
-        accuracy))
+    print('\nValidation set:\t\tAverage loss: {:.4f}, Accuracy: ({:.1f})\n'.format(
+        validation_loss, accuracy))
 
     # ================================================================== #
     #                        Tensorboard Logging                         #
@@ -135,13 +132,8 @@ def validate(args, model, loss_fn, device, epoch, logger, validation_split_fract
         logger.histo_summary(tag, value.data.cpu().numpy(), step)
         logger.histo_summary(tag+'/grad', value.grad.data.cpu().numpy(), step)
 
-    # 3. Log training images (image summary), commented out manually
-    '''info = { 'images': images.view(-1, 64, 64)[:10].cpu().numpy() }
+    return np.array(outputs), targets
 
-    for tag, images in info.items():
-        logger.image_summary(tag, images, step)'''
-
-    return np.array( outputs ).reshape(-1,10), targets
 
 if __name__ == '__main__':
     # Training settings
@@ -168,7 +160,10 @@ if __name__ == '__main__':
                         help='For Saving the current Model')
     parser.add_argument('--verbose', type=bool, default=True,
                         help='boolean indicator of verbosity')
-    
+    parser.add_argument("--train-chroms", nargs="*", type=int, default=[1, 2, 3, 4, 5, 6, 7, 8],
+                        help='list of chromosomes to use as training data')
+    parser.add_argument("--valid-chroms", nargs="*", type=int, default=[13],
+                        help='list of chromosomes to use as validation data')
     args = parser.parse_args()
         
     # Device configuration
@@ -177,10 +172,14 @@ if __name__ == '__main__':
     # Dataset loading
     print( "\n>>> Loading datasets\n" )
 
-    data_arrays_list, data_targets_list, data_chromnum_list = unpickle_data_pickle( args.data_pickle_path ) 
-    tensor_dataset = torch.tensor( data_arrays_list ).double() 
+    data_arrays_list, data_targets_list, data_chromnum_list = unpickle_data_pickle( args.data_pickle_path )
+
+    # split data into training and validation sets
+
+
+    tensor_dataset = torch.tensor( data_arrays_list ).double()
     tensor_labels = torch.tensor( data_targets_list ).double() # try .long() if you get a bug
-    
+
     if args.verbose:
         print( ">>> Loaded datasets\n" )
         
@@ -233,6 +232,8 @@ if __name__ == '__main__':
     for epoch in range( args.epochs ):
 
         training_output, training_targets = train( args, model, criterion, device, tensor_dataloader, optimizer, epoch, args.batch_size, logger )
+        validation_split_fraction = 0.2  # todo: remove this?????
+        validating_output, validating_targets = validate(args, model, criterion, device, tensor_dataloader, epoch, logger, validation_split_fraction)
 
         if epoch == ( args.epochs - 1 ): # we only care about the last epoch's output
             all_models_final_outputs = training_output
