@@ -42,11 +42,6 @@ class Logger(object):
         # Create and write Summary
         summary = tf.Summary(value=img_summaries)
         self.writer.add_summary(summary, step)
-<<<<<<< HEAD
-        
-=======
-
->>>>>>> 382fb36bc0c664a33cfb1a9e5c1aefde5a88cbe6
     def histo_summary(self, tag, values, step, bins=1000):
         """Log a histogram of the tensor of values."""
 
@@ -59,11 +54,7 @@ class Logger(object):
         hist.max = float(np.max(values))
         hist.num = int(np.prod(values.shape))
         hist.sum = float(np.sum(values))
-<<<<<<< HEAD
-        hist.sum_squares = float(np.sum(values**2))
-=======
         hist.sum_squares = float(np.sum(values ** 2))
->>>>>>> 382fb36bc0c664a33cfb1a9e5c1aefde5a88cbe6
 
         # Drop the start of the first bin
         bin_edges = bin_edges[1:]

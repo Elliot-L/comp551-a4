@@ -58,7 +58,7 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
 
                 print('Training Epoch: {} [{}/{} ({:.0f}%)]\t\tTrain Loss: {:.6f}\tTrain Accuracy:{:.1f}\n'.format(
                     epoch, batch_idx+1, len(train_loader),
-                    100. * batch_idx / len(train_loader), loss.item(), train_acc ) )
+                    100. * batch_idx / len(train_loader), loss.item(), train_acc.item() ) )
                 
 
                 # ================================================================== #
@@ -67,7 +67,7 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
 
                 # 1. Log scalar values (scalar summary)
                 info = {    
-                    'train loss': loss.item(), 'train accuracy': train_acc
+                    'train loss': loss.item(), 'train accuracy': train_acc.item()
                 }
                 
                 step = batch_idx + ( epoch *  len( train_loader ) ) 
@@ -229,6 +229,7 @@ if __name__ == '__main__':
         print( f"\nThe log file will be saved in {logpath.__str__()}\n")
 
     # Model definition
+    # model = BaseNet( ).to( device ).double()
     model = ThreeLayerModel13( batch_size=args.batch_size ).to( device ).double() # casting it to double because of some pytorch expected type peculiarities
     
     # Loss and optimizer
