@@ -163,9 +163,9 @@ if __name__ == '__main__':
                         help='For Saving the current Model')
     parser.add_argument('--verbose', type=bool, default=True,
                         help='boolean indicator of verbosity')
-    parser.add_argument("--train-chroms", nargs="*", type=int, default=[1, 2, 3, 4, 5, 6, 7, 8],
+    parser.add_argument("--train-chroms", nargs="+", type=int, default=[1, 2, 3, 4, 5, 6, 7, 8],
                         help='list of chromosomes to use as training data')
-    parser.add_argument("--valid-chroms", nargs="*", type=int, default=[13],
+    parser.add_argument("--valid-chroms", nargs="+", type=int, default=[13],
                         help='list of chromosomes to use as validation data')
     parser.add_argument("--data-transform", type=str, default="None",
                         help="transform to apply to the data before passing to the CNNs (can be 'mult_cap' or 'log').")
@@ -191,13 +191,15 @@ if __name__ == '__main__':
         this_data_arrays_list, this_data_targets_list, this_data_chromnum_list = unpickle_data_pickle( identified_file ) 
         if args.data_transform == "mult_cap":
             # scale
+            print( "\n>>> Multiplying by 16.0 and capping at 100.0\n" )
             mult_arrays = [ arr*16.0 for arr in this_data_arrays_list ]
-            mult_targets = [ target*16.0 for target in this_data_targets_list ]
+            # don't multiply the targets by 16.0 though
             # cap (max = 100.0)
             data_arrays_list.extend( [ np.clip( arr, 0.0, 100.0 ) for arr in mult_arrays ] )
-            data_targets_list.extend( [ max( min( target, 6 ), 0 ) for target in mult_targets ]  )
+            data_targets_list.extend( [ max( min( target, 100 ), 0 ) for target in this_data_targets_list ]  )
         elif args.data_transform == "log":
             # the +1.0 is to avoid -inf issues
+            print( "\n>>> Appling log( arr + 1.0 ) transform\n" )
             data_arrays_list.extend( [ np.log( arr+1.0 ) for arr in this_data_arrays_list ] )
             data_targets_list.extend( [ np.log( target+1.0 ) for target in this_data_targets_list ] )
         else:
@@ -239,8 +241,8 @@ if __name__ == '__main__':
         print( f"\nThe log file will be saved in {logpath.__str__()}\n")
 
     # Model definition
-    # model = BaseNet( ).to( device ).double()
-    model = ThreeLayerModel13( batch_size=args.batch_size ).to( device ).double() # casting it to double because of some pytorch expected type peculiarities
+    model = BaseNet( ).to( device ).double()
+    # model = ThreeLayerModel13( batch_size=args.batch_size ).to( device ).double() # casting it to double because of some pytorch expected type peculiarities
     
     # Loss and optimizer
     # parametize this
