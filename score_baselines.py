@@ -11,7 +11,7 @@ from stats.gaussian_blur_main import gaussian_blur, gkern, my_make_gaussian_kern
 from utils.iterate_over_diagonal import kth_diag_indices
 from utils.sparse_matrix_construction import create_matrix
 
-def assess_baselines( raw_data_dir, downsampled_data_dir, chromosome_range=list( range( 1,23 ) ), diag_offset_range=list( range( 0, 60 ) ), verbose=True, bandwidth_or_upper_triangular_correlation_output_file=None, diagonal_correlation_output_file=None, entire_triangular_comparison=False, metric='cor', rescale_factor=1.0, chrom_wise_pickle=True ):
+def assess_baselines( raw_data_dir, downsampled_data_dir, chromosome_range=list( range( 1,23 ) ), diag_offset_range=list( range( 0, 100 ) ), verbose=True, bandwidth_or_upper_triangular_correlation_output_file=None, diagonal_correlation_output_file=None, entire_triangular_comparison=False, metric='cor', rescale_factor=1.0, chrom_wise_pickle=True ):
     """
     Documentation TBD, use the off-tabbed # comments to collapse sections.
     """ 
