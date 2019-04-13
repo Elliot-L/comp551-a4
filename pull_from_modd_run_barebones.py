@@ -167,6 +167,8 @@ if __name__ == '__main__':
                         help='list of chromosomes to use as training data')
     parser.add_argument("--valid-chroms", nargs="*", type=int, default=[13],
                         help='list of chromosomes to use as validation data')
+    parser.add_argument("--data-transform", type=str, default="None",
+                        help="transform to apply to the data before passing to the CNNs (can be 'mult_cap' or 'log').")
     args = parser.parse_args()
         
     # Device configuration
@@ -187,8 +189,20 @@ if __name__ == '__main__':
         assert identified_file is not None 
 
         this_data_arrays_list, this_data_targets_list, this_data_chromnum_list = unpickle_data_pickle( identified_file ) 
-        data_arrays_list.extend( this_data_arrays_list )
-        data_targets_list.extend( this_data_targets_list )
+        if args.data_transform == "mult_cap":
+            # scale
+            mult_arrays = [ arr*16.0 for arr in this_data_arrays_list ]
+            mult_targets = [ target*16.0 for target in this_data_targets_list ]
+            # cap (max = 100.0)
+            data_arrays_list.extend( [ np.clip( arr, 0.0, 100.0 ) for arr in mult_arrays ] )
+            data_targets_list.extend( [ max( min( target, 6 ), 0 ) for target in mult_targets ]  )
+        elif args.data_transform == "log":
+            # the +1.0 is to avoid -inf issues
+            data_arrays_list.extend( [ np.log( arr+1.0 ) for arr in this_data_arrays_list ] )
+            data_targets_list.extend( [ np.log( target+1.0 ) for target in this_data_targets_list ] )
+        else:
+            data_arrays_list.extend( this_data_arrays_list )
+            data_targets_list.extend( this_data_targets_list )
 
     tensor_dataset = torch.tensor( data_arrays_list ).double() 
     tensor_labels = torch.tensor( data_targets_list ).double() # try .long() if you get a bug
