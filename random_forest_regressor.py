@@ -1,6 +1,6 @@
 import os, argparse, pickle
 import numpy as np
-from utils.unpickle import unpickle_data_pickle
+from utils.unpickle import gather_chromosome_data
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 
@@ -26,8 +26,12 @@ def train_and_test(X_train, y_train, X_test, y_test, args):
 if __name__ == '__main__':
     # Training settings
     parser = argparse.ArgumentParser(description='Used to run RandomForestRegressor')
-    parser.add_argument('--data-pickle-path', type=str, required=True, metavar='P',
-                        help="path to the file containing the pickled list of (array, target, chromosome number) tuples")
+    # parser.add_argument('--data-pickle-path', type=str, required=True, metavar='P',
+    #                     help="path to the file containing the pickled list of (array, target, chromosome number) tuples")
+    parser.add_argument('--train-data-path', type=str, required=True, metavar='T',
+                        help="path to the file containing the pickled list of (array, target, chromosome number) tuples for training")
+    parser.add_argument('--test-data-path', type=str, required=True, metavar='V',
+                        help="path to the file containing the pickled list of (array, target, chromosome number) tuples for testing")
     parser.add_argument('--seed', type=int, default=None, metavar='S',
                         help='random seed (default: None)')
     parser.add_argument('--num-iterations', type=int, default=1, metavar='I',
@@ -39,21 +43,23 @@ if __name__ == '__main__':
 
     print('Loading data...')
 
-    # todo: need the proper logic for loading all training and validation data appropriately
-    X, y, data_chromnum_list = unpickle_data_pickle( args.data_pickle_path )
+    # X, y, data_chromnum_list = unpickle_data_pickle( args.data_pickle_path )
+
+    X_test, y_test, _ = gather_chromosome_data(args.test_data_path)
+    X_train, y_train, _ = gather_chromosome_data(args.train_data_path)
 
     if args.verbose:
         print('Data loaded')
 
-    # small sample for now to debug, needs to be replaced with real full train / test data
-    X_train = X[:10000]
-    y_train = y[:10000]
+    # # small sample for now to debug, needs to be replaced with real full train / test data
+    # X_train = X[:10000]
+    # y_train = y[:10000]
+    #
+    # X_test = X[10000:20000]
+    # y_test = y[10000:20000]
 
-    X_test = X[10000:20000]
-    y_test = y[10000:20000]
-
-    X_train = np.array([x.flatten() for x in X_train])
     X_test = np.array([x.flatten() for x in X_test])
+    X_train = np.array([x.flatten() for x in X_train])
 
     mses, errors = train_and_test(X_train, y_train, X_test, y_test, args)
 
