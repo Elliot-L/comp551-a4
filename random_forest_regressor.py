@@ -32,7 +32,7 @@ if __name__ == '__main__':
                         help="path to the file containing the pickled list of (array, target, chromosome number) tuples for training")
     parser.add_argument('--test-data-path', type=str, required=True, metavar='V',
                         help="path to the file containing the pickled list of (array, target, chromosome number) tuples for testing")
-    parser.add_argument('--seed', type=int, default=None, metavar='S',
+    parser.add_argument('--seed', type=int, default=7, metavar='S',
                         help='random seed (default: None)')
     parser.add_argument('--num-iterations', type=int, default=1, metavar='I',
                         help='num iterations (default: 1)')
