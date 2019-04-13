@@ -25,7 +25,7 @@ from logger import Logger
 # local files
 from models.cnn_models import *
 from models.srdensenet import Net as SRDenseNet
-from utils.unpickle import unpickle_data_pickle
+from utils.unpickle import gather_chromosome_data
 
 
 def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatch_size, logger):
@@ -111,7 +111,7 @@ def validate(args, model, loss_fn, device, validation_loader, epoch, logger, val
 
     validation_loss /= ( validation_loader.batch_size * len( validation_loader ) )
     # recall that notion of accuracy is weird for regression
-    accuracy = torch.sqrt(validation_loss).item()
+    accuracy = np.sqrt(validation_loss)
 
     print('\nValidation set:\t\tAverage loss: {:.4f}, Accuracy: ({:.1f})\n'.format(
         validation_loss, accuracy))
@@ -138,8 +138,10 @@ def validate(args, model, loss_fn, device, validation_loader, epoch, logger, val
 if __name__ == '__main__':
     # Training settings
     parser = argparse.ArgumentParser(description='Used to run CNN')
-    parser.add_argument( '--data-pickle-path', type=str, required=True, metavar='P',
-                        help="path to the file containing the pickled list of (array, target, chromosome number) tuples" )
+    parser.add_argument('--train-data-path', type=str, required=True, metavar='T',
+                        help="path to the file containing the pickled list of (array, target, chromosome number) tuples for training")
+    parser.add_argument('--valid-data-path', type=str, required=True, metavar='V',
+                        help="path to the file containing the pickled list of (array, target, chromosome number) tuples for testing")
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--l2', type=float, default=0, metavar='N',
@@ -172,29 +174,41 @@ if __name__ == '__main__':
     # Dataset loading
     print( "\n>>> Loading datasets\n" )
 
-    data_arrays_list, data_targets_list, data_chromnum_list = unpickle_data_pickle( args.data_pickle_path )
+    # data_arrays_list, data_targets_list, data_chromnum_list = unpickle_data_pickle( args.data_pickle_path )
 
-    # split data into training and validation sets
+    X_valid, y_valid, _ = gather_chromosome_data(args.valid_data_path)
+    X_train, y_train, _ = gather_chromosome_data(args.train_data_path)
 
+    train_tensor_dataset = torch.tensor( X_train ).double()
+    train_tensor_labels = torch.tensor( y_train ).double() # try .long() if you get a bug
 
-    tensor_dataset = torch.tensor( data_arrays_list ).double()
-    tensor_labels = torch.tensor( data_targets_list ).double() # try .long() if you get a bug
+    valid_tensor_dataset = torch.tensor( X_valid ).double()
+    valid_tensor_labels = torch.tensor( y_valid ).double() # try .long() if you get a bug
 
     if args.verbose:
         print( ">>> Loaded datasets\n" )
         
-    print( tensor_dataset.shape )
-    print( tensor_labels.shape )
+    print( train_tensor_dataset.shape )
+    print( train_tensor_labels.shape )
     
-    tensor_dataset = TensorDataset( tensor_dataset, tensor_labels )
-    assert len( data_arrays_list ) == len( tensor_dataset )
+    train_tensor_dataset = TensorDataset( train_tensor_dataset, train_tensor_labels )
+    valid_tensor_dataset = TensorDataset( valid_tensor_dataset, valid_tensor_labels )
+    # assert len( data_arrays_list ) == len( tensor_dataset )
 
-    tensor_dataloader = DataLoader(
-        tensor_dataset,
+    train_tensor_dataloader = DataLoader(
+        train_tensor_dataset,
         batch_size=args.batch_size,
         shuffle=True,
         drop_last=True
     )
+
+    valid_tensor_dataloader = DataLoader(
+        valid_tensor_dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        drop_last=True
+    )
+
 
     if args.verbose:
         print( ">>> Compiled tensor dataset" )
@@ -231,9 +245,9 @@ if __name__ == '__main__':
       
     for epoch in range( args.epochs ):
 
-        training_output, training_targets = train( args, model, criterion, device, tensor_dataloader, optimizer, epoch, args.batch_size, logger )
+        training_output, training_targets = train( args, model, criterion, device, train_tensor_dataloader, optimizer, epoch, args.batch_size, logger )
         validation_split_fraction = 0.2  # todo: remove this?????
-        validating_output, validating_targets = validate(args, model, criterion, device, tensor_dataloader, epoch, logger, validation_split_fraction)
+        validating_output, validating_targets = validate(args, model, criterion, device, valid_tensor_dataloader, epoch, logger, validation_split_fraction)
 
         if epoch == ( args.epochs - 1 ): # we only care about the last epoch's output
             all_models_final_outputs = training_output
@@ -255,8 +269,8 @@ if __name__ == '__main__':
         else:                
             training_and_validating_outputs =  np.hstack( ( all_models_final_outputs, all_corresponding_targets.reshape( -1, 1 ) ) )
 
-            training_indices = range( 0, int( len( tensor_dataloader.dataset ) * ( 1.0 - args.validation_split_fraction ) ) )
-            validating_indices = range( max( training_indices )+1, len( tensor_dataloader.dataset ) )
+            training_indices = range( 0, int( len( train_tensor_dataloader.dataset ) * ( 1.0 - args.validation_split_fraction ) ) )
+            validating_indices = range( max( training_indices )+1, len( valid_tensor_dataloader.dataset ) )
 
             for m in range( args.n_models ):
                 column_range = list( range( m*10, (m+1)*10 ) )
