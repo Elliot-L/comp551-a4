@@ -1,4 +1,4 @@
-import os, argparse
+import os, argparse, pickle
 import numpy as np
 import pandas as pds
 
@@ -11,7 +11,7 @@ from stats.gaussian_blur_main import gaussian_blur, gkern, my_make_gaussian_kern
 from utils.iterate_over_diagonal import kth_diag_indices
 from utils.sparse_matrix_construction import create_matrix
 
-def assess_baselines( raw_data_dir, downsampled_data_dir, chromosome_range=list( range( 1,23 ) ), diag_offset_range=list( range( 0, 60 ) ), verbose=True, bandwidth_or_upper_triangular_correlation_output_file=None, diagonal_correlation_output_file=None, entire_triangular_comparison=False, metric='cor', rescale_factor=1.0 ):
+def assess_baselines( raw_data_dir, downsampled_data_dir, chromosome_range=list( range( 1,23 ) ), diag_offset_range=list( range( 0, 60 ) ), verbose=True, bandwidth_or_upper_triangular_correlation_output_file=None, diagonal_correlation_output_file=None, entire_triangular_comparison=False, metric='cor', rescale_factor=1.0, chrom_wise_pickle=False ):
     """
     Documentation TBD, use the off-tabbed # comments to collapse sections.
     """ 
@@ -330,10 +330,18 @@ def assess_baselines( raw_data_dir, downsampled_data_dir, chromosome_range=list(
         if bandwidth_or_upper_triangular_correlation_output_file is not None:
             correlations_dataframe.to_csv( bandwidth_or_upper_triangular_correlation_output_file, mode='a', sep='\t', float_format='%1.3f' )
             print( f"saved triangular/bandwidth correlations for chromosome {chrom_number} under:\n{bandwidth_or_upper_triangular_correlation_output_file}\n")
-        
+            if chrom_wise_pickle:
+                with open( f"{bandwidth_or_upper_triangular_correlation_output_file.split('.')[0]}_chrom_{chrom_number}_data.pickle", "wb" ) as pickle_handle:
+                    pickle.dump( correlations_dataframe, pickle_handle, protocol=pickle.HIGHEST_PROTOCOL )
+
         if diagonal_correlation_output_file is not None:
             diagonal_wise_correlations.to_csv( diagonal_correlation_output_file, mode='a', sep='\t', float_format='%1.3f' )
             print( f"saved diagonal correlations for chromosome {chrom_number} under:\n{diagonal_correlation_output_file}\n")
+            if chrom_wise_pickle:
+                with open( f"{diagonal_correlation_output_file.split('.')[0]}_chrom_{chrom_number}_data.pickle", "wb" ) as pickle_handle:
+                    pickle.dump( diagonal_wise_correlations, pickle_handle, protocol=pickle.HIGHEST_PROTOCOL )
+                    
+        
 
         # prior kernel ?
     print( "\nfinished." )
