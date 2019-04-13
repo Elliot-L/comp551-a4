@@ -5,6 +5,7 @@ from __future__ import print_function
 
 import os, argparse, pickle
 
+from math import sqrt
 from tqdm import tqdm
 from datetime import datetime
 from collections import Counter
@@ -21,11 +22,10 @@ from torch.utils.data import DataLoader, TensorDataset
 from torch.utils.data.sampler import SubsetRandomSampler, SequentialSampler
 from logger import Logger
 
-
 # local files
 from models.cnn_models import *
 from models.srdensenet import Net as SRDenseNet
-from utils.unpickle import unpickle_data_pickle
+from utils.unpickle import gather_chromosome_data
 
 
 def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatch_size, logger):
@@ -112,7 +112,7 @@ def validate(args, model, loss_fn, device, validation_loader, epoch, logger):
     validation_loss /= ( validation_loader.batch_size * len( validation_loader ) )
     # recall that notion of accuracy is weird for regression
     
-    accuracy = torch.sqrt(validation_loss).item()
+    accuracy = sqrt( validation_loss )
 
     print('\nValidation set:\t\tAverage loss: {:.4f}, Accuracy: ({:.1f})\n'.format(
         validation_loss, accuracy))
@@ -139,10 +139,10 @@ def validate(args, model, loss_fn, device, validation_loader, epoch, logger):
 if __name__ == '__main__':
     # Training settings
     parser = argparse.ArgumentParser(description='Used to run CNN')
-    parser.add_argument( '--data-pickle-dir-path', type=str, required=True, metavar='P',
-                        help="path to the directory containing each chromosome's pickleld list of (array, target, chromosome number) tuples." )
-    parser.add_argument( '--use-chroms', type=int, nargs='+', required=True, metavar='C',
-                        help="space-delimited list of chromosomes integers (e.g. 1 2 3 for chromosomes 1, 2, and 3) to use for this run." )
+    parser.add_argument('--train-data-path', type=str, required=True, metavar='T',
+                        help="path to the dir containing the pickled list of (array, target, chromosome number) tuples for training")
+    parser.add_argument('--valid-data-path', type=str, required=True, metavar='V',
+                        help="path to the dir containing the pickled list of (array, target, chromosome number) tuples for testing")
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--l2', type=float, default=0, metavar='N',
@@ -176,7 +176,9 @@ if __name__ == '__main__':
     
     # Dataset loading
     print( "\n>>> Loading datasets\n" )
-    
+    """
+            # remove this after debugging
+
     data_arrays_list, data_targets_list, data_chromnum_list = [],[],[]
     files_in_dir = [ os.path.join( args.data_pickle_dir_path, f ) for f in os.listdir( args.data_pickle_dir_path ) if os.path.isfile( os.path.join( args.data_pickle_dir_path, f ) ) and '.pickle' in f ]
     print( f"\n>>> Found {len( files_in_dir )} pickled files in {args.data_pickle_dir_path}\n" )
@@ -188,6 +190,7 @@ if __name__ == '__main__':
                 break 
         assert identified_file is not None 
 
+        
         this_data_arrays_list, this_data_targets_list, this_data_chromnum_list = unpickle_data_pickle( identified_file ) 
         if args.data_transform == "mult_cap":
             # scale
@@ -204,26 +207,57 @@ if __name__ == '__main__':
             data_targets_list.extend( [ np.log( target+1.0 ) for target in this_data_targets_list ] )
         else:
             data_arrays_list.extend( this_data_arrays_list )
-            data_targets_list.extend( this_data_targets_list )
+            data_targets_list.extend( this_data_targets_list )"""
 
-    tensor_dataset = torch.tensor( data_arrays_list ).double() 
-    tensor_labels = torch.tensor( data_targets_list ).double() # try .long() if you get a bug
+    # data_arrays_list, data_targets_list, data_chromnum_list = unpickle_data_pickle( args.data_pickle_path )
+
+    X_valid, y_valid, _ = gather_chromosome_data(args.valid_data_path)
+    X_train, y_train, _ = gather_chromosome_data(args.train_data_path)
+
+    if args.data_transform == "mult_cap":
+        # scale by downsample ratio
+        print( "\n>>> Multiplying arrays (not targets) by 16.0 and capping arrays and targets at 100.0\n" )
+        X_train = [ np.clip( arr*16.0, 0.0, 100.0 ) for arr in X_train ]
+        X_valid = [ np.clip( arr*16.0, 0.0, 100.0 ) for arr in X_valid ]
+        y_train = [ max( min( target, 100.0 ), 0.0 ) for target in y_train ] 
+        y_valid = [ max( min( target, 100.0 ), 0.0 ) for target in y_valid ]  
+    elif args.data_transform == "log":
+        print( "\n>>> Appling log( arr + 1.0 ) transform\n" )
+        X_train = [ np.log( arr+1.0 ) for arr in X_train ]
+        X_valid = [ np.log( arr+1.0 ) for arr in X_valid ]
+        y_valid = np.log( np.array( y_valid ) + 1.0 )
+        y_train = np.log( np.array( y_train ) + 1.0 )
+
+    train_tensor_dataset = torch.tensor( X_train ).double()
+    train_tensor_labels = torch.tensor( y_train ).double() # try .long() if you get a bug
+
+    valid_tensor_dataset = torch.tensor( X_valid ).double()
+    valid_tensor_labels = torch.tensor( y_valid ).double() # try .long() if you get a bug
 
     if args.verbose:
         print( ">>> Loaded datasets\n" )
         
-    print( tensor_dataset.shape )
-    print( tensor_labels.shape )
+    print( train_tensor_dataset.shape )
+    print( train_tensor_labels.shape )
+    
+    train_tensor_dataset = TensorDataset( train_tensor_dataset, train_tensor_labels )
+    valid_tensor_dataset = TensorDataset( valid_tensor_dataset, valid_tensor_labels )
+    # assert len( data_arrays_list ) == len( tensor_dataset )
 
-    tensor_dataset = TensorDataset( tensor_dataset, tensor_labels )
-    assert len( data_arrays_list ) == len( tensor_dataset ) == len( tensor_labels ) 
-
-    tensor_dataloader = DataLoader(
-        tensor_dataset,
+    train_tensor_dataloader = DataLoader(
+        train_tensor_dataset,
         batch_size=args.batch_size,
         shuffle=True,
         drop_last=True
     )
+
+    valid_tensor_dataloader = DataLoader(
+        valid_tensor_dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        drop_last=True
+    )
+
 
     if args.verbose:
         print( ">>> Compiled tensor dataset" )
@@ -259,9 +293,9 @@ if __name__ == '__main__':
     all_models_final_outputs, all_corresponding_targets = None, None 
       
     for epoch in range( args.epochs ):
-        training_output, training_targets = train( args, model, criterion, device, tensor_dataloader, optimizer, epoch, args.batch_size, logger )
-        validation_split_fraction = 0.2  # todo: remove this?????
-        validating_output, validating_targets = validate(args, model, criterion, device, tensor_dataloader, epoch, logger, validation_split_fraction)
+
+        training_output, training_targets = train( args, model, criterion, device, train_tensor_dataloader, optimizer, epoch, args.batch_size, logger )
+        validating_output, validating_targets = validate(args, model, criterion, device, valid_tensor_dataloader, epoch, logger )
 
         if epoch == ( args.epochs - 1 ): # we only care about the last epoch's output
             all_models_final_outputs = training_output
@@ -272,15 +306,13 @@ if __name__ == '__main__':
         
         if not os.path.isdir( os.path.join( os.getcwd(), 'pickled-model-params' ) ): 
             os.makedirs( os.path.join( os.getcwd(), 'pickled-model-params' ) )
-
-        torch.save( model.state_dict(), os.path.join( os.getcwd(), 'pickled-params', start_timestamp+'_model.savefile' ) )
-    
+        
+        # the line below is jic we want to examine the preds vs targets
         training_and_validating_outputs =  np.hstack( ( all_models_final_outputs, all_corresponding_targets.reshape( -1, 1 ) ) )
 
-        training_indices = range( 0, int( len( tensor_dataloader.dataset ) * ( 1.0 - args.validation_split_fraction ) ) )
-        validating_indices = range( max( training_indices )+1, len( tensor_dataloader.dataset ) )
+        torch.save( model.state_dict(), os.path.join( os.getcwd(), 'pickled-model-params', start_timestamp+'_model.savefile' ) )
 
-        with open( os.path.join( os.getcwd(), 'pickled-params', start_timestamp+'_params.savefile' ), 'w' ) as params_file:
+        with open( os.path.join( os.getcwd(), 'pickled-model-params', start_timestamp+'_params.savefile' ), 'w' ) as params_file:
             params_file.write( args.__repr__() )
             params_file.write( '\n' )
             params_file.write( optimizer.__repr__() )
@@ -288,4 +320,4 @@ if __name__ == '__main__':
             params_file.write( criterion.__repr__() )
 
     print( f"\nThe log file was saved in {logpath.__str__()}\n")
-    print( f"\nThe model and parameter save files were saved in { os.path.join( os.getcwd(), 'pickled-params' ) }\n" )
+    print( f"\nThe model and parameter save files were saved in { os.path.join( os.getcwd(), 'pickled-model-params' ) }\n" )
