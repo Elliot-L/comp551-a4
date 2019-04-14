@@ -1,6 +1,6 @@
 import pickle
 import os
-import tqdm
+from tqdm import tqdm
 
 def unpickle_data_pickle( path_to_pickled_file ):
 
