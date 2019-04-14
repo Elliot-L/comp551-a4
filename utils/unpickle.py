@@ -17,6 +17,7 @@ def gather_chromosome_data(data_dir):
 
     for file in tqdm( os.listdir(data_dir) ):
         if 'pickle' in file:
+            print( file )
             inputs, outputs, chroms = unpickle_data_pickle(os.path.join(data_dir, file))
             input_vector.extend(inputs)
             output_vector.extend(outputs)
