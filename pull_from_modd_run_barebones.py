@@ -50,8 +50,8 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
                 targets = target.clone().detach().data.numpy()
         else:
             if device.type == 'cuda':
-                outputs = np.vstack( ( outputs.cpu(), output.cpu().clone().detach().data.numpy() ) )
-                targets = np.hstack( ( targets.cpu(), target.cpu().clone().detach().data.numpy() ) )
+                outputs = np.vstack( ( outputs, output.cpu().clone().detach().data.numpy() ) )
+                targets = np.hstack( ( targets, target.cpu().clone().detach().data.numpy() ) )
             else:
                 outputs = np.vstack( ( outputs, output.clone().detach().data.numpy() ) )
                 targets = np.hstack( ( targets, target.clone().detach().data.numpy() ) )
