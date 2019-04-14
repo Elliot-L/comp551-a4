@@ -121,7 +121,8 @@ def make_training_data_list( raw_arr:np.ndarray, ds_arr:np.ndarray, bandwidth:in
         with open( pickle_file_path, 'wb' ) as pickle_handle:
             pickle.dump( data_list, pickle_handle, protocol=pickle.HIGHEST_PROTOCOL )
         print( f"\nsaved output in\n{pickle_file_path}\n")
-
+    
+    del raw_arr, ds_arr
     return data_list
 
 if __name__ == '__main__':
