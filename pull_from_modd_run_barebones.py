@@ -169,46 +169,20 @@ if __name__ == '__main__':
                         help='list of chromosomes to use as validation data')
     parser.add_argument("--data-transform", type=str, default="None",
                         help="transform to apply to the data before passing to the CNNs (can be 'mult_cap' or 'log').")
+    parser.add_argument("--preds-and-targets-file-path", type=str, default=None,
+                        help="path a file where the model's predictions and matching targets will be saved." )
     args = parser.parse_args()
         
     # Device configuration
     device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
     
+    if ( args.preds_and_targets_file_path is not None ) and os.path.isfile( args.preds_and_targets_file_path ):
+        print( "Error: the path to the file where you want to save your predictions and corresponding targets would overwrite a file!\nStopping now." )
+        raise SystemExit
+
     # Dataset loading
     print( "\n>>> Loading datasets\n" )
-    """
-            # remove this after debugging
-
-    data_arrays_list, data_targets_list, data_chromnum_list = [],[],[]
-    files_in_dir = [ os.path.join( args.data_pickle_dir_path, f ) for f in os.listdir( args.data_pickle_dir_path ) if os.path.isfile( os.path.join( args.data_pickle_dir_path, f ) ) and '.pickle' in f ]
-    print( f"\n>>> Found {len( files_in_dir )} pickled files in {args.data_pickle_dir_path}\n" )
-    for chrnum in args.use_chroms:
-        identified_file = None
-        for file in files_in_dir:
-            if 'chr{}_'.format( chrnum ) in file:
-                identified_file = file
-                break 
-        assert identified_file is not None 
-
-        
-        this_data_arrays_list, this_data_targets_list, this_data_chromnum_list = unpickle_data_pickle( identified_file ) 
-        if args.data_transform == "mult_cap":
-            # scale
-            print( "\n>>> Multiplying by 16.0 and capping at 100.0\n" )
-            mult_arrays = [ arr*16.0 for arr in this_data_arrays_list ]
-            # don't multiply the targets by 16.0 though
-            # cap (max = 100.0)
-            data_arrays_list.extend( [ np.clip( arr, 0.0, 100.0 ) for arr in mult_arrays ] )
-            data_targets_list.extend( [ max( min( target, 100 ), 0 ) for target in this_data_targets_list ]  )
-        elif args.data_transform == "log":
-            # the +1.0 is to avoid -inf issues
-            print( "\n>>> Appling log( arr + 1.0 ) transform\n" )
-            data_arrays_list.extend( [ np.log( arr+1.0 ) for arr in this_data_arrays_list ] )
-            data_targets_list.extend( [ np.log( target+1.0 ) for target in this_data_targets_list ] )
-        else:
-            data_arrays_list.extend( this_data_arrays_list )
-            data_targets_list.extend( this_data_targets_list )"""
-
+    
     # data_arrays_list, data_targets_list, data_chromnum_list = unpickle_data_pickle( args.data_pickle_path )
 
     X_valid, y_valid, _ = gather_chromosome_data(args.valid_data_path)
@@ -308,7 +282,7 @@ if __name__ == '__main__':
             os.makedirs( os.path.join( os.getcwd(), 'pickled-model-params' ) )
         
         # the line below is jic we want to examine the preds vs targets
-        training_and_validating_outputs =  np.hstack( ( all_models_final_outputs, all_corresponding_targets.reshape( -1, 1 ) ) )
+        training_and_validating_outputs =  np.vstack( ( all_models_final_outputs.reshape(-1), all_corresponding_targets.reshape( -1 ) ) )
 
         torch.save( model.state_dict(), os.path.join( os.getcwd(), 'pickled-model-params', start_timestamp+'_model.savefile' ) )
 
@@ -319,5 +293,10 @@ if __name__ == '__main__':
             params_file.write( '\n' )
             params_file.write( criterion.__repr__() )
 
+    if args.preds_and_targets_file_path is not None:
+        np.savetxt( args.preds_and_targets_file_path, training_and_validating_outputs.T, delimiter='\t', fmt='%1.3f', newline='\n' ) # the .T is not a typo!
+        print( f"\nThe predictions and corresponding targets are saved in:\n{args.preds_and_targets_file_path}\n" )
+    
     print( f"\nThe log file was saved in {logpath.__str__()}\n")
     print( f"\nThe model and parameter save files were saved in { os.path.join( os.getcwd(), 'pickled-model-params' ) }\n" )
+    
