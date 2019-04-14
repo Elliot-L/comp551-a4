@@ -38,6 +38,8 @@ if __name__ == '__main__':
                         help='num iterations (default: 1)')
     parser.add_argument('--verbose', type=bool, default=True,
                         help='boolean indicator of verbosity')
+    parser.add_argument("--data-transform", type=str, default="None",
+                        help="transform to apply to the data before passing to the classifier (can be 'mult_cap' or 'log').")
 
     args = parser.parse_args()
 
@@ -51,15 +53,22 @@ if __name__ == '__main__':
     if args.verbose:
         print('Data loaded')
 
-    # # small sample for now to debug, needs to be replaced with real full train / test data
-    # X_train = X[:10000]
-    # y_train = y[:10000]
-    #
-    # X_test = X[10000:20000]
-    # y_test = y[10000:20000]
-
-    X_test = np.array([x.flatten() for x in X_test])
-    X_train = np.array([x.flatten() for x in X_train])
+    if args.data_transform == "mult_cap":
+        # scale by downsample ratio
+        print( "\n>>> Multiplying arrays (not targets) by 16.0 and capping arrays and targets at 100.0\n" )
+        X_train = [ np.clip( arr*16.0, 0.0, 100.0 ).flatten() for arr in X_train ]
+        X_test = [ np.clip( arr*16.0, 0.0, 100.0 ).flatten() for arr in X_test ]
+        y_train = [ max( min( target, 100.0 ), 0.0 ) for target in y_train ]
+        y_test = [ max( min( target, 100.0 ), 0.0 ) for target in y_test ]
+    elif args.data_transform == "log":
+        print( "\n>>> Appling log( arr + 1.0 ) transform\n" )
+        X_train = [ np.log( arr+1.0 ).flatten() for arr in X_train ]
+        X_test = [ np.log( arr+1.0 ).flatten() for arr in X_test ]
+        y_test = np.log( np.array( y_test ) + 1.0 )
+        y_train = np.log( np.array( y_train ) + 1.0 )
+    else:
+        X_test = np.array([x.flatten() for x in X_test])
+        X_train = np.array([x.flatten() for x in X_train])
 
     mses, errors = train_and_test(X_train, y_train, X_test, y_test, args)
 
