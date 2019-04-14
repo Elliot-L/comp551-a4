@@ -111,11 +111,19 @@ def validate(args, model, loss_fn, device, validation_loader, epoch, logger):
             validation_loss += loss_fn(output, target).item()  # sum up batch loss
 
             if batch_idx == 0:
-                outputs = output.data.numpy()
-                targets = target.data.numpy()
+                if device.type == 'cuda':
+                    outputs = output.cpu().clone().detach().data.numpy()
+                    targets = target.cpu().clone().detach().data.numpy()  
+                else:  
+                    outputs = output.clone().detach().data.numpy()
+                    targets = target.clone().detach().data.numpy()
             else:
-                outputs = np.vstack( ( outputs, output.data.numpy() ) )
-                targets = np.hstack( ( targets, target.data.numpy() ) )
+                if device.type == 'cuda':
+                    outputs = np.vstack( ( outputs, output.cpu().clone().detach().data.numpy() ) )
+                    targets = np.hstack( ( targets, target.cpu().clone().detach().data.numpy() ) )
+                else:
+                    outputs = np.vstack( ( outputs, output.clone().detach().data.numpy() ) )
+                    targets = np.hstack( ( targets, target.clone().detach().data.numpy() ) )
 
     validation_loss /= ( validation_loader.batch_size * len( validation_loader ) )
     # recall that notion of accuracy is weird for regression
