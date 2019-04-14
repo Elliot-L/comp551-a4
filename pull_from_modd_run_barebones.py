@@ -42,11 +42,19 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
         optimizer.step()
         
         if batch_idx == 0:
-            outputs = output.clone().detach().data.numpy()
-            targets = target.clone().detach().data.numpy()
+            if device == 'cuda':
+                outputs = output.cpu().clone().detach().data.numpy()
+                targets = target.cpu().clone().detach().data.numpy()  
+            else:  
+                outputs = output.clone().detach().data.numpy()
+                targets = target.clone().detach().data.numpy()
         else:
-            outputs = np.vstack( ( outputs, output.clone().detach().data.numpy() ) )
-            targets = np.hstack( ( targets, target.clone().detach().data.numpy() ) )
+            if device == 'cuda':
+                outputs = np.vstack( ( outputs.cpu(), output.cpu().clone().detach().data.numpy() ) )
+                targets = np.hstack( ( targets.cpu(), target.cpu().clone().detach().data.numpy() ) )
+            else:
+                outputs = np.vstack( ( outputs, output.clone().detach().data.numpy() ) )
+                targets = np.hstack( ( targets, target.clone().detach().data.numpy() ) )
 
 
         if ( batch_idx ) % args.log_interval == 0:
