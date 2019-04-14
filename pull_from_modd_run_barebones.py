@@ -174,6 +174,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
         
     # Device configuration
+    if torch.cuda.is_available():
+        print( "\n>>> Hopping onto GPU!\n" )
+
     device = torch.device( 'cuda' if torch.cuda.is_available() else 'cpu' )
     
     if ( args.preds_and_targets_file_path is not None ) and os.path.isfile( args.preds_and_targets_file_path ):
