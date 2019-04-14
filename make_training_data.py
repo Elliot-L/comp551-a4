@@ -137,8 +137,8 @@ if __name__ == '__main__':
                         help='path to the directory containing the raw data files.' )
     parser.add_argument( '--downsampled-data-dir', type=str, metavar='D', required=True,
                         help='path to the directory containing the downsampled data files.' )
-    parser.add_argument( '--bandwidth', type=int, metavar='B', default=60,
-                        help='how many diagonals to iterate over (default=60).' )
+    parser.add_argument( '--bandwidth', type=int, metavar='B', default=100,
+                        help='how many diagonals to iterate over (default=100).' )
     parser.add_argument( '--window-dim', type=int, metavar='W', default=13,
                         help='odd int representing window size (default=13).' )
     parser.add_argument( '--pickle-prefix', type=str, metavar='P', default="pickled_data_for_",
