@@ -49,19 +49,19 @@ if __name__ == '__main__':
 
     print('Loading data...')
 
-    # X, y, _ = gather_chromosome_data( args.valid_data_path )
-    X_test, y_test, _ = gather_chromosome_data(args.valid_data_path)
-    X_train, y_train, _ = gather_chromosome_data(args.train_data_path)
+    X, y, _ = gather_chromosome_data( args.valid_data_path )
+    #X_test, y_test, _ = gather_chromosome_data(args.valid_data_path)
+    #X_train, y_train, _ = gather_chromosome_data(args.train_data_path)
 
     if args.verbose:
         print('Data loaded')
 
     # # small sample for now to debug, needs to be replaced with real full train / test data
-    # X_train = X[:10000]
-    # y_train = y[:10000]
+    X_train = X[:10000]
+    y_train = y[:10000]
     
-    # X_test = X[10000:20000]
-    # y_test = y[10000:20000]
+    X_test = X[10000:20000]
+    y_test = y[10000:20000]
 
     if args.data_transform == "mult_cap":
         # scale by downsample ratio
