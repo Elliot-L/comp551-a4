@@ -18,9 +18,8 @@ class RNN13(nn.Module):
         self.fc1 = nn.Linear(num_hidden, 1)
 
     def forward(self, x):
-        out_rnn, h_rnn = self.rnn(x, None)
-        x = out_rnn.view(self.batch_size, self.num_hidden)
-        x = self.fc1(x[:, -1, :])
+        out_rnn, h_rnn = self.rnn(x, None)  # [batch size, 13, 13] -> [batch size, 13, 13]
+        x = self.fc1(out_rnn[:, -1, :])  # takes only final output, [batch size, 13] -> [batch size, 1]
         return x
 
 

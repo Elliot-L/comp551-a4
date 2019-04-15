@@ -28,12 +28,13 @@ from models.srdensenet import Net as SRDenseNet
 from utils.unpickle import gather_chromosome_data
 
 
-def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatch_size, logger):
+def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatch_size, logger, unsqueeze_data=True):
     model.train()
     outputs, targets = None, None
     for batch_idx, (data, target) in enumerate(train_loader):
         # unsqueeze(x) adds a dimension in the xth-position from the left to deal with the Channels argument of the Conv2d layers
-        data = data.unsqueeze( 1 )
+        if unsqueeze_data:
+            data = data.unsqueeze( 1 )
         data, target = data.to(device), target.to(device)        
         optimizer.zero_grad()
         output = model(data)
@@ -98,14 +99,15 @@ def train(args, model, loss_fn, device, train_loader, optimizer, epoch, minibatc
     return outputs, targets
 
 
-def validate(args, model, loss_fn, device, validation_loader, epoch, logger):
+def validate(args, model, loss_fn, device, validation_loader, epoch, logger, unsqueeze_data=True):
     model.eval()
     validation_loss = 0
     correct = 0
     outputs, targets = None, None 
     with torch.no_grad():
         for batch_idx, (data, target) in enumerate(validation_loader):
-            data = data.unsqueeze(1)
+            if unsqueeze_data:
+                data = data.unsqueeze(1)
             data, target = data.to(device), target.to(device)
             output = model(data)
             validation_loss += loss_fn(output, target).item()  # sum up batch loss
@@ -163,7 +165,7 @@ if __name__ == '__main__':
                         help='input batch size for training (default: 64)')
     parser.add_argument('--l2', type=float, default=0, metavar='N',
                         help='weight_decay parameter sent to optimizer (default: 0.0001)')
-    parser.add_argument('--epochs', type=int, default=10, metavar='N',
+    parser.add_argument('--epochs', type=int, default=25, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 0.001)')
@@ -187,6 +189,8 @@ if __name__ == '__main__':
                         help="transform to apply to the data before passing to the CNNs (can be 'mult_cap' or 'log').")
     parser.add_argument("--preds-and-targets-file-path", type=str, default=None,
                         help="path a file where the model's predictions and matching targets will be saved." )
+    parser.add_argument("--RNN", type=bool, default=False,
+                        help="should be False for CNN and true for RNN")
     args = parser.parse_args()
         
     # Device configuration
@@ -268,7 +272,8 @@ if __name__ == '__main__':
         print( f"\nThe log file will be saved in {logpath.__str__()}\n")
 
     # Model definition
-    model = BaseNet( ).to( device ).double()
+    # model = BaseNet( ).to( device ).double()
+    model = RNN13(batch_size=args.batch_size).to(device).double()
     # model = ThreeLayerModel13( batch_size=args.batch_size ).to( device ).double() # casting it to double because of some pytorch expected type peculiarities
     
     # Loss and optimizer
@@ -287,8 +292,8 @@ if __name__ == '__main__':
       
     for epoch in range( args.epochs ):
 
-        training_output, training_targets = train( args, model, criterion, device, train_tensor_dataloader, optimizer, epoch, args.batch_size, logger )
-        validating_output, validating_targets = validate(args, model, criterion, device, valid_tensor_dataloader, epoch, logger )
+        training_output, training_targets = train( args, model, criterion, device, train_tensor_dataloader, optimizer, epoch, args.batch_size, logger, unsqueeze_data=(not args.RNN))
+        validating_output, validating_targets = validate(args, model, criterion, device, valid_tensor_dataloader, epoch, logger, unsqueeze_data=(not args.RNN))
 
         if epoch == ( args.epochs - 1 ): # we only care about the last epoch's output
             all_models_final_outputs = training_output
