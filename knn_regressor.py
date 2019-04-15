@@ -50,7 +50,7 @@ if __name__ == '__main__':
     print('Loading data...')
 
     # X, y, _ = gather_chromosome_data( args.valid_data_path )
-    X_test, y_test, _ = gather_chromosome_data(args.test_data_path)
+    X_test, y_test, _ = gather_chromosome_data(args.valid_data_path)
     X_train, y_train, _ = gather_chromosome_data(args.train_data_path)
 
     if args.verbose:
