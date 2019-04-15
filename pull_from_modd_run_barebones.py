@@ -295,6 +295,7 @@ if __name__ == '__main__':
             all_corresponding_targets = training_targets
         
     # Saving output
+    training_and_validating_outputs = None # dummy declaration
     if ( args.save_model ):
         
         if not os.path.isdir( os.path.join( os.getcwd(), 'pickled-model-params' ) ): 
