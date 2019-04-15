@@ -1,4 +1,4 @@
-import cv2
+
 import numpy as np 
 import matplotlib.pyplot as plt
 
@@ -39,7 +39,7 @@ def gaussian_blur( in_array, gaussian_blur_function, gaussian_blur_parameters={}
 
         in_array: the np.ndarray (or scipy.sparse array) representing the matrix to blur.
 
-        gaussian_blur_function: one of "scipy", "skimage", or "cv2"; indicates which gaussian blur function to use.
+        gaussian_blur_function: one of "scipy" or "skimage"; indicates which gaussian blur function to use.
 
         gaussian_blur_parameters:   parameters to pass onto the specified gaussian blur function. 
                                     if "scipy" or "skimage", the parameters (and default values) are:
@@ -66,9 +66,9 @@ def gaussian_blur( in_array, gaussian_blur_function, gaussian_blur_parameters={}
     return_type = type( in_array )
     gaussian_blur_function = gaussian_blur_function.lower()
     try:
-        assert gaussian_blur_function in [ "scipy", "skimage", "cv2" ]
+        assert gaussian_blur_function in [ "scipy", "skimage" ]
     except AssertionError as aerr:
-        raise AssertionError( f"\ngaussian_blur_function must be 'scipy', 'skimage', or 'cv2'. You passed {gaussian_blur_function}.\n" ) from aerr
+        raise AssertionError( f"\ngaussian_blur_function must be 'scipy', 'skimage'. You passed {gaussian_blur_function}.\n" ) from aerr
 
     if isinstance( in_array, csr_matrix ) and in_array.dtype == float:
         if verbose:
@@ -82,10 +82,14 @@ def gaussian_blur( in_array, gaussian_blur_function, gaussian_blur_parameters={}
         else:
             return gaussian_filter( in_array.astype( float ), **gaussian_blur_parameters )
     else:
+        print( "Error: gaussian blurring is only supported using convolutions, or built-in functions with scipy/skimage" )
+        raise SystemExit
+        """
+        # deleted this code bc I couldn't get opencv to work on google cloud
         if return_type == csr_matrix:
             return csr_matrix( cv2.GaussianBlur( in_array.toarray().astype( float ), **gaussian_blur_parameters ) )
         else:
-            return cv2.GaussianBlur( in_array.toarray().astype( float ), **gaussian_blur_parameters )
+            return cv2.GaussianBlur( in_array.toarray().astype( float ), **gaussian_blur_parameters )"""
 
 # copied from https://github.com/zhangyan32/HiCPlus/blob/master/src/Gaussian_kernel_smoothing.py
 def gkern(kernlen, nsig): # holy fucking shit, he literally copied the *_wrong_* original answer from https://stackoverflow.com/questions/29731726/how-to-calculate-a-gaussian-kernel-matrix-efficiently-in-numpy

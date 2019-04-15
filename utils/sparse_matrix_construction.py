@@ -2,7 +2,10 @@ import pickle, os
 
 import numpy as np 
 import pandas as pds 
+import matplotlib.pyplot as plt
 
+from tqdm import tqdm
+from mpl_toolkits.mplot3d import Axes3D
 from scipy.sparse import csr_matrix
 
 def negate_triangular( triangular_arr:np.ndarray , triangular_to_neg="lower", inplace=False ):
@@ -98,7 +101,7 @@ def create_matrix( path_to_downsampled_file, read_csv_params, output_type:str, o
     hic_mat = np.zeros( ( matrix_dims, matrix_dims ) )
 
     # populating matrix's upper triangular
-    for row_tup in downsampled_df.itertuples():
+    for row_tup in tqdm( downsampled_df.itertuples() ):
         # row_tup: tuple of ( index, col1 value, col2 value, col3 value, col4 value, ... )  
         if row_tup[1] <= row_tup[2]:
             hic_mat[ row_tup[1], row_tup[2] ] += row_tup[3]
@@ -146,16 +149,30 @@ def create_matrix( path_to_downsampled_file, read_csv_params, output_type:str, o
 
 if __name__ == '__main__':
     m = create_matrix( 
-        os.path.join( os.getcwd(), '..', 'data', 'test', 'test_file_for_matrix_construction.tsv.gz' ),
+        os.path.join( os.getcwd(), '..', 'data', 'raw', 'chr11_10kb.RAWobserved.gz' ),
         {
             'sep':'\t',
             'header':None,
             'index_col':None,
             'compression':'gzip'
         },
-        "pandas",
-        os.path.join( os.getcwd(), '..', 'data', 'test', 'test_output.tsv.pickle' ),
-        enforce_symm=False
+        "numpy",
+        #os.path.join( os.getcwd(), '..', 'data', 'test', 'test_output.tsv.pickle' ),
+        enforce_symm=True
     )
-    print( type( m ) )
-    print( m )
+    ml = np.log( m + 1.0 )
+    subsec = ml[280:380,280:380]
+
+    fig, ax = plt.subplots()
+    ax.imshow( subsec, cmap="Reds" )
+    plt.show()
+
+    
+    ele_fig = plt.figure() 
+    ax = ele_fig.add_subplot(111, projection='3d')
+    X, Y = np.meshgrid( 100,100 )
+    ax.plot_surface( X.T, Y.T, ml[280:380,280:380] )
+    plt.show()
+
+    print( "hi" )
+
