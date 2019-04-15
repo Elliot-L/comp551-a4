@@ -67,14 +67,14 @@ if __name__ == '__main__':
         # scale by downsample ratio
         print( "\n>>> Multiplying arrays (not targets) by 16.0 and capping arrays and targets at 100.0\n" )
         X_train = [ np.clip( arr*16.0, 0.0, 100.0 ) for arr in X_train ]
-        X_valid = [ np.clip( arr*16.0, 0.0, 100.0 ) for arr in X_valid ]
+        X_test = [ np.clip( arr*16.0, 0.0, 100.0 ) for arr in X_test ]
         y_train = [ max( min( target, 100.0 ), 0.0 ) for target in y_train ] 
-        y_valid = [ max( min( target, 100.0 ), 0.0 ) for target in y_valid ]  
+        y_test = [ max( min( target, 100.0 ), 0.0 ) for target in y_test ]  
     elif args.data_transform == "log":
         print( "\n>>> Appling log( arr + 1.0 ) transform\n" )
         X_train = [ np.log( arr+1.0 ) for arr in X_train ]
-        X_valid = [ np.log( arr+1.0 ) for arr in X_valid ]
-        y_valid = np.log( np.array( y_valid ) + 1.0 )
+        X_test = [ np.log( arr+1.0 ) for arr in X_test ]
+        y_test = np.log( np.array( y_test ) + 1.0 )
         y_train = np.log( np.array( y_train ) + 1.0 )
 
     X_test = np.array([x.flatten() for x in X_test])
