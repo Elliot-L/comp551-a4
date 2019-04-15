@@ -10,17 +10,17 @@ RNN model
 """
 
 class RNN13(nn.Module):
-    def __init__(self, num_hidden=20, num_layers=2, batch_size=1):
+    def __init__(self, num_hidden=13, num_layers=2, batch_size=1):
         super(RNN13, self).__init__()
         self.batch_size = batch_size
         self.num_hidden = num_hidden
-        self.rnn = nn.LSTM(input_size=169, hidden_size=num_hidden, num_layers=num_layers)
+        self.rnn = nn.LSTM(input_size=13, hidden_size=num_hidden, num_layers=num_layers, batch_first=True)
         self.fc1 = nn.Linear(num_hidden, 1)
 
     def forward(self, x):
-        out_rnn, h_rnn = self.rnn(x)
+        out_rnn, h_rnn = self.rnn(x, None)
         x = out_rnn.view(self.batch_size, self.num_hidden)
-        x = self.fc1(x)
+        x = self.fc1(x[:, -1, :])
         return x
 
 
