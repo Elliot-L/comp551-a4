@@ -114,15 +114,25 @@ def compare_gaussian_kernels( dim, sigma, my_make_gaussian_kernel_params={'showp
 
     their_gbk = gkern( dim, sigma )
     my_gbk = my_make_gaussian_kernel( dim, [ 0.0, 0.0 ], np.eye(2)*sigma, **my_make_gaussian_kernel_params )
-    
-    print( np.sum( their_gbk ) ) 
-    print( np.sum( my_gbk ) )
+
 
     fig = plt.figure() 
-    ax = fig.subplots( nrows=1, ncols=3 )
+    
+    ax = fig.subplots( nrows=1, ncols=2 )
     ax[0].imshow( their_gbk, cmap="Reds" )
     ax[1].imshow( my_gbk, cmap="Reds" )
-    ax[2].imshow( my_gbk - their_gbk )
+    ax[0].set_xlabel( "Zhang et al.'s 13x13 'Gaussian' kernel" )
+    ax[1].set_xlabel( "Our own 13x13 Gaussian kernel" )
+    
+    plt.show() 
+
+    fig, ax = plt.subplots()
+    
+    plt.set_cmap('Reds')
+    plt.imshow( my_gbk - their_gbk )
+    plt.colorbar()
+    ax.set_xlabel( "Difference in Gaussian kernels\n(Zhang et al.'s kernel - our own kernel)" )
+  
     plt.show()
 
 
