@@ -28,7 +28,7 @@ from models.cnn_models import *
 from utils.unpickle import gather_chromosome_data
 
 
-def run_on_test(model, loss_fn,  device, test_loader, output_file_path, number_of_padding_arrays, unsqueeze_data=True):
+def run_on_test(model, loss_fn,  device, test_loader, output_file_path, unsqueeze_data=True):
     """
     Runs model on testing set, saves output in output_file_path
     """
@@ -36,7 +36,9 @@ def run_on_test(model, loss_fn,  device, test_loader, output_file_path, number_o
     preds = []
     mse = 0
     with torch.no_grad():
-        for i, data, target in tqdm(enumerate(test_loader)):  # iterates through batches of 64 64x64 images
+        for i, data in tqdm(enumerate(test_loader)):  # iterates through batches of 64 arrays
+            target = data[1]
+            data = data[0]
             if unsqueeze_data:
                 data = data.unsqueeze(1)
             data = data.to(device)
@@ -46,13 +48,14 @@ def run_on_test(model, loss_fn,  device, test_loader, output_file_path, number_o
                 preds.append(f"{batch_element + ( i * test_loader.batch_size )},{output[ batch_element ].item()}")
 
     mse /= ( test_loader.batch_size * len( test_loader ) )
+    mse = mse.item()
     mae = sqrt(mse)
 
     with open(output_file_path, 'w') as predictions_file:
         predictions_file.write('MSE: ' + str(mse))
         predictions_file.write('\nMAE: ' + str(mae))
         predictions_file.write('\nId,Prediction\n')
-        predictions_file.write('\n'.join(preds[:-number_of_padding_arrays]))
+        predictions_file.write('\n'.join(preds))
 
     print('MSE: ' + str(mse))
     print('\nMAE: ' + str(mae))
@@ -61,12 +64,12 @@ def run_on_test(model, loss_fn,  device, test_loader, output_file_path, number_o
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Runs a PyTorch model on the test dataset')
-    parser.add_argument('--path-to-model-savefile', nargs='+', type=str, required=True,
+    parser.add_argument('--path-to-model-savefile', type=str, required=True,
                         help="path to the model save file, should be in /pickled-params/<something>/<timestamp>_model.savefile")
-    parser.add_argument('--test-data-path', nargs='+', type=str, required=True,
+    parser.add_argument('--test-data-path', type=str, required=True,
                         help="path to the models test set")
-    parser.add_argument('--model-batch-size', type=int, default=64,
-                        help='batch size for model (default: 64)')
+    parser.add_argument('--batch-size', type=int, default=64,
+                        help='batch size for model (default: 1)')
     parser.add_argument("--RNN", type=bool, default=False,
                         help="should be False for CNN and true for RNN")
     parser.add_argument("--data-transform", type=str, default="None",
@@ -82,8 +85,7 @@ if __name__ == '__main__':
     # path_to_model_savefile = os.path.abspath( r"C:\Users\Samy\Dropbox\Samy_Dropbox\MSc\winter-2019-courses\COMP-551\mini-project-3\comp551-a3\pickled-params\2019-03-13_22-33_model.savefile" )
     # hard-coded parameters end here
 
-    test_inputs, test_targets, _ = gather_chromosome_data(args.valid_data_path)
-    number_of_padding_arrays = len(test_targets) % args.batch_size
+    test_inputs, test_targets, _ = gather_chromosome_data(args.test_data_path)
     print(">>> Loaded test dataset")
 
     if args.data_transform == "mult_cap":
@@ -100,30 +102,40 @@ if __name__ == '__main__':
 
     print(">>> Preprocessed test dataset images")
 
-    test_dataset = torch.stack(test_inputs)
-    print(f">>> {test_dataset.shape}")
+    test_tensor_dataset = torch.tensor(test_inputs).double()
+    print(f">>> {test_tensor_dataset.shape}")
+    test_tensor_targets = torch.tensor(test_targets).double()
+    test_tensor_dataset = TensorDataset( test_tensor_dataset, test_tensor_targets )
 
     test_loader = torch.utils.data.DataLoader(
-        test_dataset,
-        batch_size=args.model_batch_size,
-        shuffle=False
+        test_tensor_dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        drop_last=True
     )
 
     start_timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M')
 
     # load learned parameters
     # hard-coded parameters start here
-    model = ThreeLayerModel13().to(device).double()  # casting it to double because of some  weird pytorch peculiarities
+    model = ThreeLayerModel13(batch_size=args.batch_size).to(device).double()  # casting it to double because of some  weird pytorch peculiarities
     # hard-coded parameters end here
-    model.load_state_dict(torch.load(args.path_to_model_savefile))
+    if torch.cuda.is_available():
+        print('Loading model on to GPU')
+        model.load_state_dict(torch.load(args.path_to_model_savefile))  # gpu use by default
+    else:
+        print('Loading model on to CPU')
+        model.load_state_dict(
+            torch.load(args.path_to_model_savefile, map_location='cpu'))  # prevents bugging out from no cuda availability
 
     print(">>> Loaded model\n\n")
 
     output_file_path = os.path.join(os.path.dirname(args.path_to_model_savefile),
                                     f'{start_timestamp}_test_set_predictions.csv')
+    loss_fn = nn.MSELoss()
 
     print(">>> Evaluating on test dataset")
-    _ = run_on_test(model, device, test_loader, output_file_path, number_of_padding_arrays, unsqueeze_data=(not args.RNN))
+    run_on_test(model, loss_fn, device, test_loader, output_file_path, unsqueeze_data=(not args.RNN))
 
     print(">>> Finished")
 
