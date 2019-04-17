@@ -118,7 +118,8 @@ if __name__ == '__main__':
 
     # load learned parameters
     # hard-coded parameters start here
-    model = ThreeLayerModel13(batch_size=args.batch_size).to(device).double()  # casting it to double because of some  weird pytorch peculiarities
+    model = BaseNet(batch_size=args.batch_size).to(device).double()  # casting it to double because of some  weird pytorch peculiarities
+    # model = ThreeLayerModel13(batch_size=args.batch_size).to(device).double()  # casting it to double because of some  weird pytorch peculiarities
     # hard-coded parameters end here
     
     print('Loading model on to CPU')
