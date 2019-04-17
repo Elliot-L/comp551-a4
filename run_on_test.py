@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     print(">>> Have you checked that the model you are using is the same model as the one(s) you trained with?")
     # useful reference for debugging
