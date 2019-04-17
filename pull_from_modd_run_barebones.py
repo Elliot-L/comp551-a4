@@ -268,8 +268,8 @@ if __name__ == '__main__':
         print( f"\nThe log file will be saved in {logpath.__str__()}\n")
 
     # Model definition
-    # model = BaseNet( ).to( device ).double()
-    model = ThreeLayerModel13( batch_size=args.batch_size ).to( device ).double() # casting it to double because of some pytorch expected type peculiarities
+    model = BaseNet( ).to( device ).double()
+    # model = ThreeLayerModel13( batch_size=args.batch_size ).to( device ).double() # casting it to double because of some pytorch expected type peculiarities
     
     # Loss and optimizer
     # parametize this
