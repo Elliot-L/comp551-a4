@@ -24,7 +24,6 @@ from logger import Logger
 
 # local files
 from models.cnn_models import *
-from models.srdensenet import Net as SRDenseNet
 from utils.unpickle import gather_chromosome_data
 
 
