@@ -120,9 +120,9 @@ if __name__ == '__main__':
     # hard-coded parameters start here
     model = ThreeLayerModel13(batch_size=args.batch_size).to(device).double()  # casting it to double because of some  weird pytorch peculiarities
     # hard-coded parameters end here
-    if torch.cuda.is_available():
-        print('Loading model on to GPU')
-        model.load_state_dict(torch.load(args.path_to_model_savefile))  # gpu use by default
+    #if torch.cuda.is_available():
+    #    print('Loading model on to GPU')
+    #    model.load_state_dict(torch.load(args.path_to_model_savefile))  # gpu use by default
     else:
         print('Loading model on to CPU')
         model.load_state_dict(
