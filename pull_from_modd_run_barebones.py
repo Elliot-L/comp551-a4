@@ -299,6 +299,8 @@ if __name__ == '__main__':
             all_corresponding_targets = training_targets
         
     # Saving output
+    # the line below is jic we want to examine the preds vs targets
+    training_and_validating_outputs =  np.vstack( ( all_models_final_outputs.reshape(-1), all_corresponding_targets.reshape( -1 ) ) )
     if ( args.save_model ):
         
         if not os.path.isdir( os.path.join( os.getcwd(), 'pickled-model-params' ) ): 

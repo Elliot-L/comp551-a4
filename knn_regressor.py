@@ -13,10 +13,11 @@ def train_and_test(X_train, y_train, X_test, y_test, args):
             n_neighbors=args.k_neighbors,
             weights='distance'
         )
-
+        print( "Fitting model...\n" ) 
         model.fit(X_train, y_train)
-
+        print( "Fit model, making predictions...\n" )
         y_hat = model.predict(X_test)
+        print( "Made predictions, calculating MSE & RMSE...\n" )
         error = mean_squared_error(y_test, y_hat)
         result_mse.append(error)
         result_error.append(np.sqrt(error))
@@ -77,6 +78,7 @@ if __name__ == '__main__':
         y_test = np.log( np.array( y_test ) + 1.0 )
         y_train = np.log( np.array( y_train ) + 1.0 )
 
+    print( f"{len( X_train )}, {len( X_test )}\n" )
     X_test = np.array([x.flatten() for x in X_test])
     X_train = np.array([x.flatten() for x in X_train])
 
